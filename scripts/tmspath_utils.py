@@ -9,7 +9,6 @@ import mne # library for EEG data analysis
 import numpy as np # library for manging numerical data 
 from PyQt5.QtWidgets import QFileDialog # library for creating dialogue windows
 import plotly.graph_objs as go # library for graphic objects
-import TECAPy_tools # library of user-defined functions
 import scipy 
 import seaborn as sns
 import re
@@ -69,7 +68,7 @@ from fooof.sim.gen import gen_power_spectrum
 from fooof.sim.utils import set_random_seed
 from fooof.plts.spectra import plot_spectra
 from fooof.plts.annotate import plot_annotated_model
-import TECAPy_tools
+import tmspath_utils_adj
 
 
 def import_modules():
@@ -159,7 +158,6 @@ def import_modules():
     # ===============================
     # User-defined functions
     # ===============================
-    import TECAPy_tools
     import tmspath_utils as tmsu
     
     # ===============================
@@ -190,11 +188,11 @@ def directorySetup(json_data):
     #experiment_dir = os.path.join(json_data['mainDir'], f"{json_data['date']}_{json_data['emispheric_stimulation']}_{extraNote}")
     #experiment_dir = os.path.join(json_data['mainDir'], f"{json_data['detrend_fitConstraint']}_{json_data['detrend_offsetCorrectionType']}_{json_data['emispheric_stimulation']}_{extraNote}")
     fit_letter = str(json_data['detrend_fitConstraint'])[0]  # 'T' o 'F'
-    offset_letter = json_data['detrend_offsetCorrectionType'][0]  # Prima lettera della stringa
-    
+    offset_letter = str(json_data['detrend_offsetCorrectionType'])[0]  # Prima lettera della stringa
+    date = json_data['date']
     experiment_dir = os.path.join(
         json_data['mainDir'],
-        f"{fit_letter}_{offset_letter}_{extraNote}"
+        f"{date}_{fit_letter}_{offset_letter}_{extraNote}"
     )
 
     subdirs = [
@@ -624,7 +622,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 def remove_tms_artifact_and_plot_psd(raw, events, json_data, experiment_dir, sub, figsize=(10, 6), subPath='1.basic', do_plot=False, ica_continuum=False):
-    from TECAPy_tools import tms_pulse_removal_init
+    from tmspath_utils_adj import tms_pulse_removal_init
 
     psd_dir = Path(experiment_dir) / subPath
     psd_dir.mkdir(parents=True, exist_ok=True)
@@ -1850,11 +1848,11 @@ def run_ica_filtering_v3(EPOCHS, json_data, experiment_dir, sub,
     # 6. Controllo manuale finale (opzionale)
     if manualCheck:
         try:
-            import TECAPy_tools
-            ica = TECAPy_tools.ICApp(ica, postICA_raw)
+            import tmspath_utils_adj
+            ica = tmspath_utils_adj.ICApp(ica, postICA_raw)
             postICA_clean = ica.apply(postICA_raw.copy())
         except ImportError:
-            print("⚠️ TECAPy_tools non disponibile. Salto ispezione manuale.")
+            print("⚠️ tmspath_utils_adj non disponibile. Salto ispezione manuale.")
             postICA_clean = postICA_raw
     else:
         postICA_clean = postICA_raw
@@ -1900,7 +1898,7 @@ def plot_ersp(postICA_final, channel=['Cz', 'Fx'], subDir='4.postICA', saveNote=
         plt.subplots_adjust(wspace=1.25, hspace=1)
         for i, FEAT in enumerate(raw.ch_names):
             print(FEAT)
-            ersp, freqs = TECAPy_tools.plot_ersp(postICA_final, FEAT, n_cycle=2, show=False, ax=ax[i])
+            ersp, freqs = tmspath_utils_adj.plot_ersp(postICA_final, FEAT, n_cycle=2, show=False, ax=ax[i])
         fig.savefig(f'{experiment_dir}\\{subDir}\\{sub}_ERSP_{saveNote}.png')
 
 def plot_topomap(postICA_final, 
@@ -1940,7 +1938,7 @@ def plot_gmfp(postICA_final, json_data, experiment_dir, sub, FEAT=['Cz', 'Fx']):
         # GMFP time course (if channels='all') or 
         # LMFP (if channels = ['Fz', 'Cz',...]
         #FEAT = json_data['seedChans'] #'all'
-        g_l_mfp = TECAPy_tools.plot_gmfp(postICA_final, channels=FEAT, show=False)
+        g_l_mfp = tmspath_utils_adj.plot_gmfp(postICA_final, channels=FEAT, show=False)
         json_data['feats_smfp'] = g_l_mfp
         # add saving
     return g_l_mfp
@@ -2092,7 +2090,7 @@ def run_ica_filtering(EPOCHS, n_components=None, manualCheck=True, threshold_per
     fig.savefig(f'{experiment_dir}\\{subPath}\\{sub}_eigenvalueDist_{saveNote}.png')
     plt.close()
     if manualCheck: 
-        ica = TECAPy_tools.ICApp(ica, postICA_raw)
+        ica = tmspath_utils_adj.ICApp(ica, postICA_raw)
         postICA_raw_bis = ica.apply(postICA_raw.copy())  
         postICA_clean = postICA_raw_bis
         ica.exclude = excluded_components
@@ -2170,11 +2168,11 @@ def run_ica_filtering_v2(EPOCHS, n_components=None, manualCheck=True, threshold_
     # 6. Controllo manuale finale
     if manualCheck:
         try:
-            import TECAPy_tools
-            ica = TECAPy_tools.ICApp(ica, postICA_raw)
+            import tmspath_utils_adj
+            ica = tmspath_utils_adj.ICApp(ica, postICA_raw)
             postICA_clean = ica.apply(postICA_raw.copy())
         except ImportError:
-            print("TECAPy_tools non disponibile. Salto ispezione manuale.")
+            print("tmspath_utils_adj non disponibile. Salto ispezione manuale.")
             postICA_clean = postICA_raw
     else:
         postICA_clean = postICA_raw
@@ -2218,7 +2216,7 @@ def run_ica_artist_ext_only(EPOCHS, n_components=None, ext_threshold_uv=30, manu
     remaining_components = list(all_components - set(excluded_components))
 
     if manualCheck:
-        ica = TECAPy_tools.ICApp(ica, postICA_raw)
+        ica = tmspath_utils_adj.ICApp(ica, postICA_raw)
         postICA_clean = ica.apply(postICA_raw.copy())
     else:
         postICA_clean = postICA_raw
@@ -2291,7 +2289,7 @@ def run_ica_artist_tms_events(raw, events, n_components=None,
     remaining_components = list(all_components - set(excluded_components))
 
     if manualCheck:
-        ica = TECAPy_tools.ICApp(ica, postICA_raw)
+        ica = tmspath_utils_adj.ICApp(ica, postICA_raw)
         postICA_clean = ica.apply(postICA_raw.copy())
     else:
         postICA_clean = postICA_raw
