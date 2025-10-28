@@ -1193,7 +1193,7 @@ def ICAprocessing(file,
       
                  ):
     
-    autoReject=json_data['do_ica_automaticRej'],
+    #autoReject=json_data['do_ica_automaticRej'],
     label_prob_threshold=json_data['do_label_prob_threshold'],
     threshold_percentile=json_data['do_ica_eigThresh'],
     
@@ -1229,7 +1229,7 @@ def ICAprocessing(file,
     ######################################################################################    
     postICA_raw, ica_model = run_ica_filtering_v3(detrendedEpochs, json_data, experiment_dir, sub,
                                                   autoReject=autoReject,
-                                                  manualCheck=json_data['do_ica_manualCheck'], 
+                                                  manualCheck=manualCheck, #json_data['do_ica_manualCheck'], 
                                                   label_prob_threshold=json_data['do_label_prob_threshold'],
                                                   threshold_percentile=json_data['do_ica_eigThresh'])
     if computeFOOOF:
@@ -1571,7 +1571,8 @@ def saveLoadTestFinal(postICA_final, json_data, experiment_dir, sub, start_time)
     plt.savefig(f'{experiment_dir}\\5.final\\tep_comparison.png')
     plt.close()
 
-    json_data = add_TEP_to_json(json_data, postICA_final)
+    # json_data = add_TEP_to_json(json_data, postICA_final) # too much heavy use directly pkl
+    
     # Salva il file di parametri aggiornato con tempo incluso
     json_data_clean = make_json_serializable(json_data)
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
@@ -2620,9 +2621,147 @@ def plotTrialTepVariability(epochs, json_data, experiment_dir, sub, chanNAME='AF
         fig.savefig(f'{experiment_dir}/3.trials/{parDir}/{sub}_{saveNote}.png')
     plt.close(fig)
 
+def computeTimeMasks(epochs, chan, trial, json_data, do_plot=False, offset=0.20, plot_path=None, plot_title=None):
+    import numpy as np
+    t=epochs.times
+    n=t.size
+    data=epochs.get_data()
+    sigAll=data[trial,chan,:] if data.ndim==3 else data[chan,:]
+    def range_to_mask_by_t(t_start,t_end):
+        i_start=int(np.searchsorted(t,t_start,side='left'))
+        i_end=int(np.searchsorted(t,t_end,side='right'))-1
+        i_start=max(0,min(i_start,n-1))
+        i_end=max(0,min(i_end,n-1))
+        if i_end<i_start:i_end=i_start
+        m=np.zeros(n,dtype=bool)
+        m[i_start:i_end+1]=True
+        return m
+    t_min_off=float(json_data['detrend_minTimeWindowOffset'])
+    t_max_off=float(offset)
+    maskPreOffset=range_to_mask_by_t(t.min(),t_min_off)
+    maskTempOffset=range_to_mask_by_t(t_min_off,t_max_off)
+    idx_temp=np.flatnonzero(maskTempOffset)
+    if idx_temp.size==0:
+        i0=int(np.searchsorted(t,t_min_off,side='left'))
+        i0=max(0,min(i0,n-1))
+        maskTempOffset=np.zeros(n,dtype=bool)
+        maskTempOffset[i0]=True
+        idx_temp=np.array([i0],dtype=int)
+    sig=sigAll[idx_temp]
+    extreme=json_data.get('detrendExtremeTechinque','max')
+    if extreme=='derivative' and sig.size>=3:
+        diff=np.diff(sig)
+        zc=np.where((diff[:-1]<0)&(diff[1:]>0))[0]
+        k=(zc[0]+1) if zc.size>0 else int(np.argmax(np.abs(sig)))
+    else:
+        k=int(np.argmax(np.abs(sig)))
+    if k<0:k=0
+    if k>=sig.size:k=sig.size-1
+    i_peak=idx_temp[k]
+    t_peak=t[i_peak]
+    maskOffset=np.zeros(n,dtype=bool)
+    maskOffset[np.flatnonzero(range_to_mask_by_t(t_min_off,t_peak))]=True
+    maskPostOffset=np.zeros(n,dtype=bool)
+    i_post_start=min(i_peak+1,n-1)
+    maskPostOffset[i_post_start:]=True
+    if do_plot:
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(11,7))
+        plt.plot(t,sigAll,label='signal (all)')
+        plt.plot(t[idx_temp],sig,label='signal (temp window)')
+        plt.scatter(t_peak,sigAll[i_peak],s=60,label=f'peak @ {t_peak:.4f}s')
+        plt.axvline(x=t_min_off,linestyle='--',label=f"minTimeWindowOffset={t_min_off}")
+        plt.axvline(x=t_max_off,linestyle='--',label=f"maxTimeWindowOffset={t_max_off}")
+        plt.title(plot_title or f"chan={chan}, trial={trial}")
+        plt.legend(loc='best')
+        if plot_path:
+            plt.savefig(plot_path,dpi=150,bbox_inches='tight');plt.close()
+        else:
+            plt.show()
+    return maskPreOffset,maskOffset,maskPostOffset
 
 
-def computeTimeMasks(epochs, chan, trial, json_data, do_plot=False, offset=0.20):
+def computeTimeMasks_old16102025(epochs, chan, trial, json_data, do_plot=False, offset=0.20, plot_path=None, plot_title=None):
+    # dimensioni e sampling
+    data = epochs.get_data()
+    n = data.shape[-1]
+    t = epochs.times
+    sfreq = epochs.info['sfreq']
+
+    # helper per convertire range (s) -> maschera booleana di lunghezza n
+    def range_to_mask(t_start, t_end):
+        s = int(round(t_start * sfreq))
+        e = int(round(t_end   * sfreq))
+        s = max(0, min(s, n-1))
+        e = max(0, min(e, n-1))
+        if e < s: e = s
+        idx = np.arange(n)
+        return (idx >= s) & (idx <= e)
+
+    t_min_off = float(json_data['detrend_minTimeWindowOffset'])
+    t_max_off = float(offset)  # qui usi l'argomento della funzione
+
+    # maschere a indici (coerenti con n)
+    maskPreOffset  = range_to_mask(t.min(), t_min_off)
+    maskTempOffset = range_to_mask(t_min_off, t_max_off)
+
+    # estrai il segnale corretto (2D o 3D)
+    if data.ndim == 2:
+        sigAll = data[chan, :]
+    else:
+        sigAll = data[trial, chan, :]
+
+    sig = sigAll[maskTempOffset]
+    if sig.size == 0:
+        # fallback: se la finestra è vuota, prendi almeno 1 campione al limite
+        # e rendi maskTempOffset con un singolo True in prossimità di t_min_off
+        i0 = int(round(t_min_off * sfreq))
+        i0 = max(0, min(i0, n-1))
+        maskTempOffset = np.zeros(n, dtype=bool)
+        maskTempOffset[i0] = True
+        sig = sigAll[maskTempOffset]
+
+    # stima del punto "estremo" nell'offset
+    extreme = json_data.get('detrendExtremeTechinque', 'max')
+    if extreme == 'derivative' and sig.size >= 3:
+        diff = np.diff(sig)
+        zc = np.where((diff[:-1] < 0) & (diff[1:] > 0))[0]
+        tMaxOffsetIndex = (zc[0] + 1) if zc.size > 0 else int(np.argmax(np.abs(sig)))
+    else:
+        tMaxOffsetIndex = int(np.argmax(np.abs(sig)))
+
+    # bound-check su sig (non su mask)
+    if tMaxOffsetIndex <= 0:
+        tMaxOffsetIndex = 1 if sig.size > 1 else 0
+    if tMaxOffsetIndex >= sig.size:
+        tMaxOffsetIndex = sig.size - 1
+
+    # tempo del picco relativo alla finestra temp
+    t_peak = t[maskTempOffset][tMaxOffsetIndex]
+
+    # maschere finali: pre, offset (fino al picco), post
+    maskOffset     = range_to_mask(t_min_off, t_peak)
+    maskPostOffset = range_to_mask(t_peak, t.max())
+
+    # opzionale: plot diagnostico, senza dipendenze esterne
+    if do_plot:
+        plt.figure(figsize=(11, 7))
+        plt.plot(t, sigAll, label='signal (all)')
+        plt.plot(t[maskTempOffset], sig, label='signal (temp window)')
+        plt.scatter(t_peak, sig[tMaxOffsetIndex], s=60, label=f'peak @ {t_peak:.4f}s')
+        plt.axvline(x=t_min_off, linestyle='--', label=f"minTimeWindowOffset={t_min_off}")
+        plt.axvline(x=t_max_off, linestyle='--', label=f"maxTimeWindowOffset={t_max_off}")
+        plt.title(plot_title or f"chan={chan}, trial={trial}")
+        plt.legend(loc='best')
+        if plot_path:
+            plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+            plt.close()
+        else:
+            plt.show()
+
+    return maskPreOffset, maskOffset, maskPostOffset
+
+def computeTimeMasks_old15102025(epochs, chan, trial, json_data, do_plot=False, offset=0.20):
     
     par = offset
     #print(json_data['pulse_artifact_rej_timewindow_max']*par)
@@ -3075,9 +3214,34 @@ def computeSlopesPlot(df_slopes,
 
     return df_anova_results
 
-
-
 def generate_noise_from_distribution(time_series, model='Gaussian', n_samples=1000):
+    x=np.asarray(time_series).ravel()
+    x=x[~np.isnan(x)]
+    if x.size==0: return np.zeros(n_samples,dtype=float)
+    mean=float(np.mean(x)); std=float(np.std(x)*0.5); med=float(np.median(x))
+    mn=float(np.min(x)); mx=float(np.max(x))
+    eps=1e-8
+    std=max(std,eps)
+    if not np.isfinite(mn) or not np.isfinite(mx): mn=mean-std; mx=mean+std
+    if mn==mx: mn-=std; mx+=std
+    if mn>mx: mn,mx=mx,mn
+    m=model.lower()
+    if m=='gaussian': return np.random.normal(mean,std,n_samples)
+    if m=='exponential': return np.random.exponential(scale=max(std,eps),size=n_samples)
+    if m=='laplace': return np.random.laplace(loc=med,scale=std,size=n_samples)
+    if m=='poisson': return np.random.poisson(lam=max(mean,0.0),size=n_samples)
+    if m=='rayleigh': return np.random.rayleigh(scale=std,size=n_samples)
+    if m=='gamma':
+        shape=(mean**2)/(std**2) if std>eps else 1.0
+        shape=max(shape,eps)
+        scale=(std**2)/max(mean,eps)
+        return np.random.gamma(shape,scale,size=n_samples)
+    if m in ('studentt','student_t','t'): return np.random.standard_t(2.0,size=n_samples)*std+mean
+    if m=='uniform': return np.random.uniform(low=mn,high=mx,size=n_samples)
+    raise ValueError("Unsupported model")
+
+
+def generate_noise_from_distribution_old151012025(time_series, model='Gaussian', n_samples=1000):
     """
     Generate noise samples from a specified distribution based on a time series.
 
@@ -3631,7 +3795,15 @@ def computeDetrend_v6(EPOCHS,
                 OPTPARS_C = popt_B
                 tabStat.append([chan, epoch_idx, mseA, mseB, mseC, OPTPARS_A, OPTPARS_B, OPTPARS_C])
                 mse_list.append(mseA + mseB + mseC)
-                tep_agg = np.concatenate((tepA, tepB, tepC), axis=0)
+                # 16102025
+                #tep_agg = np.concatenate((tepA, tepB, tepC), axis=0)
+                # === dopo aver calcolato tepA, tepB, tepC ===
+                # Costruisco un vettore full-length (stessa lunghezza di tep / EPOCHS.times)
+                tep_agg = tep.flatten().copy()
+                tep_agg[timeMask[0]] = tepA
+                tep_agg[timeMask[1]] = tepB
+                tep_agg[timeMask[2]] = tepC
+                
                 if lag_correction:
                     tep_agg_shifted, n_shift = shift_signal_by_mask(tep_agg, timeMask[1])
                 if correctMode!=False:
@@ -3898,7 +4070,14 @@ def computeDetrend_v6(EPOCHS,
             #####################################################################################
             tabStat.append([chan, epoch_idx, mseA, mseB, mseC, OPTPARS_A, OPTPARS_B, OPTPARS_C])
             mse_list.append(mseA + mseB + mseC)
-            tep_agg = np.concatenate((tepA, tepB, tepC), axis=0)
+            # 16102025
+            #tep_agg = np.concatenate((tepA, tepB, tepC), axis=0)
+            # === dopo aver calcolato tepA, tepB, tepC ===
+            # Costruisco un vettore full-length (stessa lunghezza di tep / EPOCHS.times)
+            tep_agg = tep.flatten().copy()
+            tep_agg[timeMask[0]] = tepA
+            tep_agg[timeMask[1]] = tepB
+            tep_agg[timeMask[2]] = tepC
             #####################################################################################
             if lag_correction:
                 tep_agg_shifted, n_shift = shift_signal_by_mask(tep_agg, timeMask[1])
@@ -4162,10 +4341,116 @@ def plot_tabStat(df_tabStat, experiment_dir):
     print(f"[INFO] Plot salvati in: {output_dir}")
 
 
+def apply_offset_correction(tep_agg, tep, timeMask, correctMode, oddSamples, EPOCHS, supported_models):
+    # lunghezze nei dati originali
+    n_pre  = int(np.count_nonzero(timeMask[0]))
+    n_off  = int(np.count_nonzero(timeMask[1]))
+    n_post = int(np.count_nonzero(timeMask[2]))
+    n_agg  = int(tep_agg.shape[0])
 
+    # Caso “pulito”: tep_agg = concat([pre, offset, post])
+    if n_pre + n_off + n_post == n_agg:
+        correctionMask      = np.r_[np.zeros(n_pre,  dtype=bool),
+                                    np.ones(n_off,   dtype=bool),
+                                    np.zeros(n_post, dtype=bool)]
+        # pre-correzione: ultimi oddSamples del pre (se oddSamples=0 usa tutto il pre)
+        k = n_pre if (oddSamples is False or oddSamples is None or oddSamples<=0) else min(oddSamples, n_pre)
+        precorrectionMask   = np.r_[np.zeros(n_pre - k, dtype=bool),
+                                    np.ones(k,          dtype=bool),
+                                    np.zeros(n_off + n_post, dtype=bool)]
+        pre_series = tep_agg[precorrectionMask]
+
+    else:
+        # fallback: riallinea maschere dalla base originale a tep_agg (trim/pad)
+        # NB: meno ideale, ma evita crash
+        baseMask = timeMask[1].astype(bool)  # offset sui dati originali
+        correctionMask = baseMask
+        if correctionMask.size > n_agg:
+            correctionMask = correctionMask[:n_agg]
+        elif correctionMask.size < n_agg:
+            correctionMask = np.pad(correctionMask, (0, n_agg - correctionMask.size), constant_values=False)
+
+        basePre = timeMask[0].astype(bool)
+        precorrectionMask = basePre
+        if precorrectionMask.size > n_agg:
+            precorrectionMask = precorrectionMask[-n_agg:]  # tieni coda (più vicina all'offset)
+        elif precorrectionMask.size < n_agg:
+            precorrectionMask = np.pad(precorrectionMask, (n_agg - precorrectionMask.size, 0), constant_values=False)
+
+        # limita a ultimi k campioni del pre
+        idx_pre = np.flatnonzero(precorrectionMask)
+        if idx_pre.size:
+            k = idx_pre.size if (oddSamples is False or oddSamples is None or oddSamples<=0) else min(oddSamples, idx_pre.size)
+            keep = idx_pre[-k:]
+            precorrectionMask[:] = False
+            precorrectionMask[keep] = True
+
+        pre_series = tep_agg[precorrectionMask]
+
+    # Se non c’è nulla da correggere o pre vuoto, esci senza errore
+    num_samples = int(np.sum(correctionMask))
+    if num_samples == 0: 
+        return tep_agg
+    if pre_series.size == 0:
+        # no-op sicuro
+        return tep_agg
+
+    # Genera i nuovi campioni (usa la tua versione robusta)
+    new_samples = generate_noise_from_distribution(pre_series, model=correctMode, n_samples=num_samples)
+
+    # Applica correzione (ora le lunghezze combaciano)
+    tep_agg[correctionMask] = new_samples
+    return tep_agg
 
 
 def apply_offset_correction(tep_agg, tep, timeMask, correctMode, oddSamples, EPOCHS, supported_models):
+    k = oddSamples / 1000  # da ms a secondi
+
+    times = EPOCHS.times
+    precorrectionMask = np.logical_and(times >= times[timeMask[0]].min(),
+                                       times < (times[timeMask[0]].max() - k))
+    correctionMask = np.logical_and(times >= (times[timeMask[1]].min() - k),
+                                    times <= (times[timeMask[1]].max() + k))
+
+    if correctMode == 'moving_average':
+        tep_flat = tep[precorrectionMask].flatten()
+        window_size = oddSamples
+        if len(tep_flat) >= window_size:
+            new_samples = np.array([
+                np.mean(tep_flat[max(0, i - window_size//2):i + window_size//2])
+                for i in range(len(tep_flat))
+            ])[-1]
+        else:
+            new_samples = np.mean(tep_flat) if len(tep_flat) > 0 else 0
+        tep_agg[correctionMask] = new_samples
+
+    elif correctMode == 'median':
+        new_samples = np.median(tep[precorrectionMask].flatten())
+        tep_agg[correctionMask] = new_samples
+
+    elif correctMode == 'zeros':
+        num_samples = sum(correctionMask)
+        tep_agg[correctionMask] = np.zeros(num_samples)
+
+    elif correctMode == 'resample':
+        num_samples = sum(correctionMask)
+        new_samples = resample(tep[precorrectionMask].flatten(), num=num_samples)
+        tep_agg[correctionMask] = new_samples
+
+    elif correctMode in supported_models:
+        num_samples = sum(correctionMask)
+        new_samples = generate_noise_from_distribution(
+            tep[precorrectionMask].flatten(),
+            model=correctMode,
+            n_samples=num_samples
+        )
+        tep_agg[correctionMask] = new_samples
+
+    return tep_agg
+
+
+
+def apply_offset_correction_old15102025(tep_agg, tep, timeMask, correctMode, oddSamples, EPOCHS, supported_models):
     k = oddSamples / 1000  # da ms a secondi
 
     times = EPOCHS.times
