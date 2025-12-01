@@ -6,6 +6,8 @@ __pycache__/
 # Cartelle da ignorare
 scripts/old/
 scripts/paperFigures/*
+scripts/paperFigures2/*
+
 
 
 # C extensions
