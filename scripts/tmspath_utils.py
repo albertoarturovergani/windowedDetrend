@@ -580,8 +580,10 @@ def run_ica_continuum_pipeline(raw, events, json_data, experiment_dir, sub):
             raw.copy(),
             events,
             ext_threshold_uv=ica_threshold_uv,
-            manualCheck=False,
-            demean_between_events=True
+            manualCheck=True,
+            demean_between_events=True,
+            json_data=json_data,
+            experiment_dir=experiment_dir
         )
 
         # Save filtered raw and ICA model
@@ -607,10 +609,10 @@ def run_ica_continuum_pipeline(raw, events, json_data, experiment_dir, sub):
         # Save basic plots
         basicPlots(
             epochs_cont,
+            json_data, experiment_dir, sub, 
             key=f'epochs_continumm_tr{ica_threshold_uv}',
             subPath='1.basic'
         )
-
         print("✅ ICA on continuum complete.")
         return raw_ica, ica_model
 
@@ -849,6 +851,21 @@ from pathlib import Path
 
 def run_detrend_pipeline(epochs, json_data, sub, experiment_dir, do_plot_variability=True):
 
+    # --- GESTIONE TRIAL-WISE VS MEAN-WISE ---
+    # Se trials_wise è False, mediamo i dati prima di procedere
+    # Il flag viene letto dal json_data
+    is_trials_wise = json_data.get('trials_wise', True)
+    
+    if not is_trials_wise:
+        print("--- Mode: MEAN-WISE (Averaging epochs before detrend) ---")
+        # Creiamo un oggetto Evoked e poi lo riportiamo in formato Epochs (con 1 solo trial)
+        # Questo serve per mantenere la compatibilità con le funzioni successive
+        avg_data = epochs.average().get_data()[np.newaxis, :, :] 
+        epochs_to_process = mne.EpochsArray(avg_data, epochs.info, tmin=epochs.tmin)
+    else:
+        print("--- Mode: TRIALS-WISE (Processing all individual trials) ---")
+        epochs_to_process = epochs.copy()    
+
     # === CASE 1: windowed detrend attivo ===
     if json_data['do_detrend']:
         print(f"I am doing {json_data['detrend_type']} detrend")
@@ -858,7 +875,7 @@ def run_detrend_pipeline(epochs, json_data, sub, experiment_dir, do_plot_variabi
             warnings.simplefilter('ignore', np.RankWarning)
 
             epochs_detrended, mse_detrend, max_order_pre_list = computeDetrend_v6(
-                epochs,
+                epochs_to_process,
                 json_data, experiment_dir, sub,
                 detrendMode=json_data['detrend_type'],
                 fitConstraint=json_data['detrend_fitConstraint'],
@@ -2231,6 +2248,8 @@ def run_ica_artist_tms_events(raw, events, n_components=None,
                               manualCheck=True,
                               subPath='4.postICA', 
                               saveNote='postICA',
+                              experiment_dir='./',
+                              json_data=None,
                               demean_between_events=False):
     import os
     import numpy as np
@@ -2988,7 +3007,6 @@ def computeSlopesPlot_v3(df_slopes, sub,
         ax[idx].set_xlabel(VAR)
         ax[idx].set_ylabel('Channels')
 
-        
         # --- Calcolo media e outlier per canale ---
         mean_per_chan = data_subset.groupby("chan")[VAR].mean()
         global_mean = mean_per_chan.mean()
