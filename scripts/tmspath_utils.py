@@ -2307,12 +2307,13 @@ def run_ica_artist_tms_events(raw, events, n_components=None,
 
     all_components = set(np.arange(n_components))
     remaining_components = list(all_components - set(excluded_components))
-
-    if manualCheck:
-        ica = tmspath_utils_adj.ICApp(ica, postICA_raw)
-        postICA_clean = ica.apply(postICA_raw.copy())
-    else:
-        postICA_clean = postICA_raw
+    postICA_clean = postICA_raw
+    
+    # if manualCheck:
+    #    ica = tmspath_utils_adj.ICApp(ica, postICA_raw, apply_baseline = False)
+    #    postICA_clean = ica.apply(postICA_raw.copy())
+    # else:
+    #    postICA_clean = postICA_raw
 
     return postICA_clean, ica
 
