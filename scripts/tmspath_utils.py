@@ -182,6 +182,54 @@ def make_json_serializable(d):
     return new_d
 
 def directorySetup(json_data):
+    import os, json
+    from pathlib import Path
+
+    extraNote = f"{json_data['detrend_typeOffsetRise']}_{json_data['detrend_typeOffsetDecay']}"
+    sub = json_data['subject']
+
+    # === NUOVA LOGICA ===
+    if "experiment_dir" in json_data and json_data["experiment_dir"]:
+        experiment_dir = json_data["experiment_dir"]
+        print(f"📌 Using provided experiment_dir: {experiment_dir}")
+    else:
+        fit_letter = str(json_data['detrend_fitConstraint'])[0]
+        offset_letter = str(json_data['detrend_offsetCorrectionType'])[0]
+        date = json_data['date']
+
+        experiment_dir = os.path.join(
+            json_data['mainDir'],
+            f"{date}_{fit_letter}_{offset_letter}_{extraNote}"
+        )
+
+        print(f"📁 Generated experiment_dir: {experiment_dir}")
+
+    # === subdirs ===
+    subdirs = [
+        '1.basic',
+        os.path.join('2.detrend'),
+        os.path.join('2.detrend', 'examples'),
+        os.path.join('3.trials', 'preDetrend'),
+        os.path.join('3.trials', 'postDetrend'),
+        '4.postICA',
+        os.path.join('5.Extra'),
+        os.path.join('5.Extra', 'FE'),
+        '6.pkls',
+        '7.FOOOF'
+    ]
+
+    os.makedirs(experiment_dir, exist_ok=True)
+    for subdir in subdirs:
+        os.makedirs(os.path.join(experiment_dir, subdir), exist_ok=True)
+
+    # salva JSON
+    with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
+        json.dump(json_data, json_file, indent=4, sort_keys=True)
+
+    return json_data, experiment_dir, sub
+
+
+def directorySetup_old_20260416(json_data):
     # === 5. Directory Setup ===
     extraNote = f'{json_data['detrend_typeOffsetRise']}_{json_data['detrend_typeOffsetDecay']}'
     sub = json_data['subject']
@@ -212,8 +260,7 @@ def directorySetup(json_data):
         os.makedirs(os.path.join(experiment_dir, subdir), exist_ok=True)
  
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data, json_file, indent=4)
-
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
 
     return json_data, experiment_dir, sub
 
@@ -313,8 +360,7 @@ def computeDetrendSteps(epochs, json_data, experiment_dir, sub, computeFOOOF=Tru
 
     # Salva parametri
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data, json_file, indent=4)
-
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
         
     return detrendedEpochs, json_data
 
@@ -391,8 +437,8 @@ def computeBasicSteps(raw, events, json_data, experiment_dir, sub,
         epochs, json_data = prepare_epochs(raw, events, temp_epochs, json_data, experiment_dir, sub)
 
     else:
-        epochs=raw
-        temp_epochs =raw
+        epochs = raw
+        temp_epochs = raw
     print(f"✅ [{sub}] Completato. Informazioni finali su Epochs:")
     print(epochs.info)
 
@@ -402,8 +448,8 @@ def computeBasicSteps(raw, events, json_data, experiment_dir, sub,
     
     # Salva parametri
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data, json_file, indent=4)
-
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
+        
     if json_data['do_artifact']:
         epochs = add_exp_artifact(epochs,json_data, experiment_dir, sub, 
                                   tau_rise=json_data['do_artifact_rise'], 
@@ -474,12 +520,12 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
 
     # === CASO MAYER ===
     if source == 'MAYER':
-        json_data['pulse_artifact_rej_timewindow_min'] = -0.002
-        json_data['pulse_artifact_rej_timewindow_max'] = 0.008
-        #json_data['detrend_minTimeWindowOffset'] = json_data['pulse_artifact_rej_timewindow_max']
+        # json_data['pulse_artifact_rej_timewindow_min'] = -0.002
+        # json_data['pulse_artifact_rej_timewindow_max'] = 0.008
+        # json_data['detrend_minTimeWindowOffset'] = json_data['pulse_artifact_rej_timewindow_max']
         if dataType == 'ASCII':
             df = loadASCII(fileName, fileName)
-            data = df.values.T
+            data = df.values.T * 1e-6
             ASCII_events = np.where(df['MK'] == df['MK'].unique()[1])[0]
             raw = loadEDF(json_data, fileName)
             rename_dict = {'T3': 'FT7', 'T4': 'FT8', 'T5': 'TP7', 'T6': 'TP8'}
@@ -493,7 +539,6 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
             saveNote = 'EDF_events'
             json_data['TEP_ID_events'] = saveNote
             json_data['sfreq'] = raw.info['sfreq']
-
             save_layout_and_metadata(raw, saveNote)
             return raw, events, json_data
 
@@ -523,9 +568,8 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
 
     # === CASO UNIMI ===
     if 'UNIMI' in source:
-        json_data['pulse_artifact_rej_timewindow_min'] = -0.002
-        json_data['pulse_artifact_rej_timewindow_max'] = 0.008
-        
+        #json_data['pulse_artifact_rej_timewindow_min'] = -0.002
+        #json_data['pulse_artifact_rej_timewindow_max'] = 0.008
         #json_data['detrend_minTimeWindowOffset'] = json_data['pulse_artifact_rej_timewindow_max']
         if dataType == 'VHDR':
             raw = mne.io.read_raw_brainvision(f'{fileName}.vhdr', eog=['VEOG', 'HEOG'], preload=True)
@@ -545,7 +589,7 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
             
         if dataType == 'ASCII':
             df = loadASCII(fileName, fileName)
-            data = df.values.T
+            data = df.values.T 
             ASCII_events = np.where(df['MK'] == df['MK'].unique()[1])[0]
             raw = loadEDF(json_data, fileName)
             rename_dict = {'T3': 'FT7', 'T4': 'FT8', 'T5': 'TP7', 'T6': 'TP8'}
@@ -730,8 +774,215 @@ def filter_and_plot_raw(raw, json_data, experiment_dir, sub, figsize=(10, 6), su
     print(f"[INFO] Raw filtered and saved → {raw_pkl_path}")
     return raw
 
-
 def clean_trials_channels(raw, events, json_data, experiment_dir, sub, seedChans=None):
+    import mne, numpy as np, sys, io, json
+    from pathlib import Path
+
+    if seedChans is None:
+        seedChans = json_data.get("seedChans", [])
+
+    if "bad_trials" not in json_data or json_data["bad_trials"] is None:
+        json_data["bad_trials"] = []
+
+    if "bad_channels" not in json_data or json_data["bad_channels"] is None:
+        json_data["bad_channels"] = []
+
+    raw_copy = raw.copy()
+    raw_copy.filter(
+        l_freq=json_data['l_freq'],
+        h_freq=json_data['h_freq'],
+        method='iir',
+        iir_params=dict(order=3, ftype='butter', phase='zero-double', btype='bandpass'),
+        verbose=True
+    )
+
+    temp_epochs = mne.Epochs(
+        raw_copy,
+        events,
+        tmin=json_data['epochs_timewindow_min'],
+        tmax=json_data['epochs_timewindow_max'],
+        detrend=None,
+        preload=True
+    )
+    temp_epochs = temp_epochs.pick('eeg')
+    temp_epochs = temp_epochs.set_eeg_reference('average')
+
+    n_trials_before = len(temp_epochs)
+
+    data = temp_epochs.get_data()
+    chan_var = np.var(data, axis=(0, 2))
+    thresh_low = np.percentile(chan_var, 5)
+    thresh_high = np.percentile(chan_var, 95)
+    auto_bad_channels = [ch for ch, var in zip(temp_epochs.ch_names, chan_var) if var < thresh_low or var > thresh_high]
+    auto_bad_channels = [ch for ch in auto_bad_channels if ch not in seedChans]
+
+    trial_var = np.var(data, axis=(1, 2))
+    t_low = np.percentile(trial_var, 5)
+    t_high = np.percentile(trial_var, 95)
+    auto_bad_trials = np.where((trial_var < t_low) | (trial_var > t_high))[0].tolist()
+
+    if len(json_data["bad_channels"]) > 0:
+        print("📌 Using bad_channels provided in json_data")
+        print(f"I am taking off the channels {json_data['bad_channels']}")
+        temp_epochs.info['bads'] = [ch for ch in json_data["bad_channels"] if ch in temp_epochs.ch_names]
+    else:
+        temp_epochs.info['bads'] = auto_bad_channels
+
+    if len(json_data["bad_trials"]) > 0:
+        print("📌 Using bad_trials provided in json_data")
+        print(f"I am taking off the trials {json_data['bad_trials']}")
+        mask = ~np.isin(temp_epochs.selection, json_data["bad_trials"])
+        trialsToTake = temp_epochs.selection[mask]
+        temp_epochs = temp_epochs[trialsToTake]
+
+    elif not json_data['do_chan_trials_selection_automatic']:
+    #if not json_data['do_chan_trials_selection_automatic']:
+        print("🖱️ Manual artifact rejection")
+        buffer = io.StringIO()
+        sys.stdout = buffer
+        temp_epochs.plot(
+            butterfly=False,
+            n_epochs=20,
+            n_channels=raw.info['nchan'],
+            block=True,
+            use_opengl=True,
+            scalings={'eog': 50e-6}
+        )
+        sys.stdout = sys.__stdout__
+        log_message = buffer.getvalue()
+        save_bad_epochs_and_channels(log_message, experiment_dir, sub, json_data)
+        print(log_message)
+
+        if "bad_channels" in json_data and json_data["bad_channels"] is not None and len(json_data["bad_channels"]) > 0:
+            temp_epochs.info['bads'] = [ch for ch in json_data["bad_channels"] if ch in temp_epochs.ch_names]
+
+        if "bad_trials" in json_data and json_data["bad_trials"] is not None and len(json_data["bad_trials"]) > 0:
+            #mask = ~np.isin(temp_epochs.selection, json_data["bad_trials"])
+            #trialsToTake = temp_epochs.selection[mask]
+            #temp_epochs = temp_epochs[trialsToTake]
+            keep_idx = np.where(~np.isin(temp_epochs.selection, json_data["bad_trials"]))[0]
+            temp_epochs = temp_epochs[keep_idx]
+    else:
+        print("🤖 Automatic artifact rejection")
+        json_data['bad_channels'] = temp_epochs.info['bads']
+        json_data['bad_trials'] = auto_bad_trials
+        #mask = ~np.isin(temp_epochs.selection, json_data['bad_trials'])
+        #trialsToTake = temp_epochs.selection[mask]
+        #temp_epochs = temp_epochs[trialsToTake]
+        keep_idx = np.where(~np.isin(temp_epochs.selection, json_data["bad_trials"]))[0]
+        temp_epochs = temp_epochs[keep_idx]
+
+    json_data['trials_tot'] = n_trials_before
+    json_data['trials_selected'] = len(temp_epochs)
+    json_data['bad_channels'] = temp_epochs.info['bads']
+
+    temp_epochs = temp_epochs.resample(sfreq=json_data['r_sfreq'])
+    temp_epochs = temp_epochs.set_eeg_reference('average')
+
+    with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
+        json.dump(json_data, json_file, indent=4, sort_keys=True)
+
+    return temp_epochs, json_data
+    
+
+def clean_trials_channels_old_20260416(raw, events, json_data, experiment_dir, sub, seedChans=None):
+    import mne, numpy as np, sys, io
+    from pathlib import Path
+
+    if seedChans is None:
+        seedChans = json_data.get("seedChans", [])
+
+    # === Filtering
+    raw_copy = raw.copy()
+    raw_copy.filter(
+        l_freq=json_data['l_freq'],
+        h_freq=json_data['h_freq'],
+        method='iir',
+        iir_params=dict(order=3, ftype='butter', phase='zero-double', btype='bandpass'),
+        verbose=True
+    )
+
+    # === Epoching
+    temp_epochs = mne.Epochs(
+        raw_copy,
+        events,
+        tmin=json_data['epochs_timewindow_min'],
+        tmax=json_data['epochs_timewindow_max'],
+        detrend=None,
+        preload=True
+    )
+    temp_epochs = temp_epochs.pick('eeg')
+    temp_epochs = temp_epochs.set_eeg_reference('average')
+
+    # === Automatic detection: bad channels
+    data = temp_epochs.get_data()
+    chan_var = np.var(data, axis=(0, 2))
+    thresh_low = np.percentile(chan_var, 5)
+    thresh_high = np.percentile(chan_var, 95)
+    bad_channels = [ch for ch, var in zip(temp_epochs.ch_names, chan_var) if var < thresh_low or var > thresh_high]
+    bad_channels_non_seed = [ch for ch in bad_channels if ch not in seedChans]
+
+    # === Automatic detection: bad trials
+    trial_var = np.var(data, axis=(1, 2))
+    t_low = np.percentile(trial_var, 5)
+    t_high = np.percentile(trial_var, 95)
+    auto_bad_trials = np.where((trial_var < t_low) | (trial_var > t_high))[0]
+    
+    if "bad_trials" not in json_data or json_data["bad_trials"] is None:
+        json_data["bad_trials"] = []
+    
+    if len(json_data["bad_trials"]) > 0:
+        print("📌 Using bad_trials provided in json_data")
+        print(f"I am taking off the trials {json_data['bad_trials']}")
+        temp_epochs.info['bads'] = bad_channels_non_seed
+        mask = ~np.isin(temp_epochs.selection, json_data["bad_trials"])
+        trialsToTake = temp_epochs.selection[mask]
+        temp_epochs = temp_epochs[trialsToTake]
+    
+    elif not json_data['do_chan_trials_selection_automatic']:
+        print("🖱️ Manual artifact rejection")
+        buffer = io.StringIO()
+        sys.stdout = buffer
+        fig = temp_epochs.plot(
+            butterfly=False,
+            n_epochs=20,
+            n_channels=raw.info['nchan'],
+            block=True,
+            use_opengl=True,
+            scalings={'eog': 50e-6}
+        )
+        sys.stdout = sys.__stdout__
+        log_message = buffer.getvalue()
+        save_bad_epochs_and_channels(log_message, experiment_dir, json_data)
+        print(log_message)
+    
+    else:
+        print("🤖 Automatic artifact rejection")
+        temp_epochs.info['bads'] = bad_channels_non_seed
+        json_data['bad_trials'] = auto_bad_trials.tolist()
+        mask = ~np.isin(temp_epochs.selection, json_data['bad_trials'])
+        trialsToTake = temp_epochs.selection[mask]
+        temp_epochs = temp_epochs[trialsToTake]
+
+    # === Aggiornamenti json
+    json_data['trials_tot'] = len(temp_epochs.annotations)
+    json_data['trials_selected'] = temp_epochs.events.shape[0]
+    json_data['bad_channels'] = temp_epochs.info['bads']
+
+    # === Final steps
+    temp_epochs = temp_epochs.resample(sfreq=json_data['r_sfreq'])
+    temp_epochs = temp_epochs.set_eeg_reference('average')
+
+    # Salva parametri
+    with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
+
+
+    return temp_epochs, json_data
+
+
+
+def clean_trials_channels_20260415(raw, events, json_data, experiment_dir, sub, seedChans=None):
     import mne, numpy as np, sys, io
     from pathlib import Path
 
@@ -781,7 +1032,7 @@ def clean_trials_channels(raw, events, json_data, experiment_dir, sub, seedChans
         fig = temp_epochs.plot(butterfly=False, n_epochs=20, n_channels=raw.info['nchan'], block=True, use_opengl=True, scalings={'eog': 50e-6})
         sys.stdout = sys.__stdout__
         log_message = buffer.getvalue()
-        save_bad_epochs_and_channels(log_message, json_data)
+        save_bad_epochs_and_channels(log_message, experiment_dir, json_data)
         print(log_message)
     else:
         print("🤖 Automatic artifact rejection")
@@ -802,8 +1053,7 @@ def clean_trials_channels(raw, events, json_data, experiment_dir, sub, seedChans
 
     # Salva parametri
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data, json_file, indent=4)
-
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
 
     return temp_epochs, json_data
 
@@ -852,20 +1102,22 @@ from pathlib import Path
 def run_detrend_pipeline(epochs, json_data, sub, experiment_dir, do_plot_variability=True):
 
     # --- GESTIONE TRIAL-WISE VS MEAN-WISE ---
-    # Se trials_wise è False, mediamo i dati prima di procedere
-    # Il flag viene letto dal json_data
     is_trials_wise = json_data.get('trials_wise', True)
     
     if not is_trials_wise:
         print("--- Mode: MEAN-WISE (Averaging epochs before detrend) ---")
-        # Creiamo un oggetto Evoked e poi lo riportiamo in formato Epochs (con 1 solo trial)
-        # Questo serve per mantenere la compatibilità con le funzioni successive
-        avg_data = epochs.average().get_data()[np.newaxis, :, :] 
-        epochs_to_process = mne.EpochsArray(avg_data, epochs.info, tmin=epochs.tmin)
+        avg_data = epochs.get_data().mean(axis=0, keepdims=True)
+        epochs_to_process = epochs.copy()[:1]
+        epochs_to_process._data = avg_data.copy()
     else:
         print("--- Mode: TRIALS-WISE (Processing all individual trials) ---")
-        epochs_to_process = epochs.copy()    
-
+        epochs_to_process = epochs.copy()
+    
+    print("epochs_to_process data shape:", epochs_to_process.get_data().shape)
+    print("epochs_to_process times len:", len(epochs_to_process.times))
+    assert epochs_to_process.get_data().shape[2] == len(epochs_to_process.times), \
+        f"{epochs_to_process.get_data().shape[2]} vs {len(epochs_to_process.times)}"
+    
     # === CASE 1: windowed detrend attivo ===
     if json_data['do_detrend']:
         print(f"I am doing {json_data['detrend_type']} detrend")
@@ -1174,8 +1426,8 @@ def check_detrend_need(epochs, json_data, experiment_dir, sub):
 
     # Salva parametri
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data, json_file, indent=4)
-
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
+        
     # === Salvataggio CSV dei risultati ===
     detrend_dir = Path(experiment_dir) / '2.detrend'
     detrend_dir.mkdir(parents=True, exist_ok=True)
@@ -1204,6 +1456,126 @@ def add_TEP_to_json(json_file, postICA_final):
 
 def ICAprocessing(file,
                   json_data, experiment_dir, sub,
+                  autoReject=True,
+                  manualCheck=True, 
+                  computeFOOOF=False):
+    from pathlib import Path
+    from datetime import datetime
+    import os, json, pickle
+
+    label_prob_threshold = json_data['do_label_prob_threshold']
+    threshold_percentile = json_data['do_ica_eigThresh']
+
+    print("""
+    📚 Riferimento TEP:
+    TMS of the primary motor cortex (M1) evokes several peaks, described
+    at approximately 15 (N15), 30 (P30), 45 (N45), 60 (P60), 100 (N100),
+    and 180 (P180) milliseconds [28,32,35,36]. However, recently it has
+    been shown that later peaks (>~80 ms) such as N100 and P180 may
+    be contaminated by sensory-evoked responses (see Sections 3.5, 4.2.3, and 4.2.4),
+    while very early peaks, such as the N15, can be contaminated by cranial muscle responses (see Section 4.2.2).
+    TEPs are detectable up to 400–500 ms around the stimulation area as well as in distant inter-connected brain areas [4,32,37].
+    
+    Paper:
+    Hernandez-Pavon, J. C., Veniero, D., Bergmann, T. O., Belardinelli, P., Bortoletto, M., Casarotto, S., ... & Ilmoniemi, R. J. (2023). 
+    TMS combined with EEG: Recommendations and open issues for data collection and analysis. Brain stimulation, 16(2), 567-593.
+    """)
+
+    print(f"⚙️ ICA eigThresh = {json_data['do_ica_eigThresh']}, label_prob_threshold = {json_data['do_label_prob_threshold']}")
+
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    postica_dir = Path(experiment_dir) / "4.postICA" / timestamp
+    postica_dir.mkdir(parents=True, exist_ok=True)
+    json_data['postICA_dir'] = str(postica_dir)
+    json_data['ICA_timestamp'] = timestamp
+
+    if isinstance(file, str) and file.endswith('.pkl'):
+        if not os.path.isfile(file):
+            raise FileNotFoundError(f"File non trovato: {file}")
+        with open(file, 'rb') as f:
+            detrendedEpochs = pickle.load(f)
+        print(f"[INFO] Oggetto caricato da: {file}")
+    else:
+        detrendedEpochs = file
+        print(f"[INFO] Oggetto passato direttamente")
+
+    postICA_raw, ica_model = run_ica_filtering_v3(
+        detrendedEpochs, json_data, postica_dir, sub,
+        autoReject=autoReject,
+        manualCheck=manualCheck,
+        label_prob_threshold=label_prob_threshold,
+        threshold_percentile=threshold_percentile
+    )
+
+    if computeFOOOF:
+        print('Computing postICA raw FOOOF')
+        df = extract_psd_features(postICA_raw, 'postICA_raw', experiment_dir, json_data)
+
+    json_data['ICA_includedComponents_tot'] = int(ica_model.n_components_ - len(ica_model.exclude))
+    json_data['ICA_components_tot'] = int(ica_model.n_components_)
+    json_data['ICA_excludedComponents'] = [int(x) for x in ica_model.exclude]
+
+    postICA_final = postICAsteps(postICA_raw, json_data, experiment_dir, sub)
+    basicPlots(
+        postICA_final,
+        json_data,
+        experiment_dir,
+        sub,
+        key='postICA_final',
+        subPath=os.path.join('4.postICA', timestamp),
+        show=False
+    )
+
+    condition_number_evoked = compute_condition_number_epochs_average(postICA_final)
+    json_data['cn_postICA_final'] = float(condition_number_evoked)
+
+    json_data_clean = make_json_serializable(json_data)
+    with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
+        json.dump(json_data_clean, json_file, indent=4, sort_keys=True)
+
+    with open(Path(experiment_dir) / '6.pkls' / f'{timestamp}_{sub}_postICA_raw.pkl', 'wb') as f:
+        pickle.dump(postICA_raw, f)
+
+    with open(Path(experiment_dir) / '6.pkls' / f'{timestamp}_{sub}_postICA_final.pkl', 'wb') as f:
+        pickle.dump(postICA_final, f)
+
+    plot_topomap(
+        postICA_final,
+        json_data, experiment_dir, sub,
+        subDir=os.path.join('4.postICA', timestamp),
+        saveNote='postICA'
+    )
+
+    json_data['feats_smfp'] = plot_gmfp(
+        postICA_final,
+        json_data,
+        experiment_dir,
+        sub,
+        FEAT=json_data['seedChans']
+    )
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(postICA_final.times * 1e3, np.mean(postICA_final.get_data(), axis=0).T * 1e6, c='k', linewidth=0.2)
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Amplitude (µV)')
+    plt.xlim(-100, 400)
+    plt.grid(False)
+    plt.savefig(postica_dir / 'tep_comparison.png')
+    plt.close()
+
+    if computeFOOOF:
+        print('Computing postICA final FOOOF')
+        df = extract_psd_features(postICA_final, 'postICA_final', experiment_dir, json_data)
+
+    json_data_clean = make_json_serializable(json_data)
+    with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
+        json.dump(json_data_clean, json_file, indent=4, sort_keys=True)
+
+    return postICA_final, json_data
+    
+
+def ICAprocessing_old_20260416(file,
+                  json_data, experiment_dir, sub,
                     autoReject=True,
                     manualCheck=True, 
                     computeFOOOF=False
@@ -1226,6 +1598,9 @@ def ICAprocessing(file,
     TEPs are detectable up to 400–500 ms around the stimulation area as well as in distant inter-connected brain areas [4,32,37].
     
     Link (materiale di riferimento): https://drive.google.com/drive/folders/1jqUiGEBVzhRdN7iISeIFFDoSeJvb4YqM
+    Paper:
+    Hernandez-Pavon, J. C., Veniero, D., Bergmann, T. O., Belardinelli, P., Bortoletto, M., Casarotto, S., ... & Ilmoniemi, R. J. (2023). 
+    TMS combined with EEG: Recommendations and open issues for data collection and analysis. Brain stimulation, 16(2), 567-593.
     """)
     
     # Log dei parametri di ICA
@@ -1271,7 +1646,7 @@ def ICAprocessing(file,
     # Salva parametri
     json_data_clean = make_json_serializable(json_data)
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data_clean, json_file, indent=4)
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
         
     with open(f'{experiment_dir}\\6.pkls\\{sub}_postICA_final.pkl', 'wb') as f:
         pickle.dump(postICA_final, f)
@@ -1294,7 +1669,7 @@ def ICAprocessing(file,
         plt.plot(postICA_final.times*1e3, np.mean(postICA_final.get_data(), axis=0).T*1e6, c='k', linewidth=0.2)
         #plt.axvline(x=0+10, c='r', linestyle='--', label='stim')
         plt.xlabel('Time (ms)')
-        plt.ylabel('Amplitude (V)')
+        plt.ylabel('Amplitude (muV)')
         plt.xlim(-100, 400)
         plt.grid(False)
         plt.savefig(f'{experiment_dir}\\5.final\\tep_comparison.png')
@@ -1308,8 +1683,8 @@ def ICAprocessing(file,
 
     json_data_clean = make_json_serializable(json_data)
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data_clean, json_file, indent=4)
-    
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
+        
     return postICA_final, json_data
 
 
@@ -1389,8 +1764,8 @@ def computeFeatExtraction(postICA_final, json_data, experiment_dir, sub):
     
     json_data_clean = make_json_serializable(json_data)
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data_clean, json_file, indent=4)
-
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
+        
     return json_data
 
 def computeFeatExtraction_v2(postICA_final, json_data, experiment_dir, sub):
@@ -1447,7 +1822,7 @@ def computeFeatExtraction_v2(postICA_final, json_data, experiment_dir, sub):
                 vmin=-1, vmax=1,
                 linewidths=0.5, cbar=True)
     plt.title("Lower Triangular Correlation Matrix (Without Diagonal)")
-    plt.savefig(f'{experiment_dir}/5.final/FE/{sub}_FE_corrMatrix.png')
+    plt.savefig(f'{experiment_dir}/5.Extra/FE/{sub}_FE_corrMatrix.png')
     plt.close()
 
     # 3 - Correlation matrix seed vs all
@@ -1459,7 +1834,7 @@ def computeFeatExtraction_v2(postICA_final, json_data, experiment_dir, sub):
                 vmin=-1, vmax=1,
                 linewidths=0.5, cbar=True)
     plt.title("Seed vs All Correlation Matrix")
-    plt.savefig(f'{experiment_dir}/5.final/FE/{sub}_FE_corrMatrix_seed.png')
+    plt.savefig(f'{experiment_dir}/5.Extra/FE/{sub}_FE_corrMatrix_seed.png')
     plt.close()
 
     # 4 - Plot TEP signal
@@ -1472,7 +1847,7 @@ def computeFeatExtraction_v2(postICA_final, json_data, experiment_dir, sub):
     plt.grid(False)
     plt.title('Average Seed TEP')
     plt.tight_layout()
-    plt.savefig(f'{experiment_dir}/5.final/FE/{sub}_FE_STEP.png')
+    plt.savefig(f'{experiment_dir}/5.Extra/FE/{sub}_FE_STEP.png')
     plt.close()
 
     # 5 - Peak selection
@@ -1568,6 +1943,68 @@ def saveLoadTestFinal(postICA_final, json_data, experiment_dir, sub, start_time)
         print(i)
     
     data = {}
+    """
+    # 'epochs'
+    # 'epochs_detrended'
+    # , 'epochs_ica', 
+    for file in ['postICA_final']:
+        filePKL=f'{experiment_dir}\\6.pkls\\{sub}_{file}.pkl'
+        with open(filePKL, 'rb') as f:
+            data[file] = pickle.load(f)
+            basicPlots(data[file], json_data, experiment_dir, sub, key=file, subPath='5.final', show=json_data['showPlotsEnd'])
+            plt.close()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(data['postICA_final'].times*1e3, np.mean(data['postICA_final'].get_data(), axis=0).T*1e6, c='k', linewidth=0.2)
+    #plt.axvline(x=0+10, c='r', linestyle='--', label='stim')
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Amplitude (µV)')
+    plt.xlim(-100, 400)
+    plt.grid(False)
+    plt.savefig(f'{experiment_dir}\\5.final\\tep_comparison.png')
+    plt.close()
+    """
+    # json_data = add_TEP_to_json(json_data, postICA_final) # too much heavy use directly pkl
+    # plot_TEP_1d_with_shading(postICA_final, f'{experiment_dir}/5.Extra/tep_1D.png')
+
+    # Calcolo tempo totale di esecuzione
+    elapsed_time = time.time() - start_time
+    json_data['finish_time'] = time.time()
+    json_data['total_elapsed_time_sec'] = round(elapsed_time, 2)
+    
+    # Salva il file di parametri aggiornato con tempo incluso
+    json_data_clean = make_json_serializable(json_data)
+    with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
+            json.dump(json_data_clean, json_file, indent=4)
+            
+    print(f"✅ Tempo totale di esecuzione: {elapsed_time:.2f} secondi")
+
+    return json_data
+
+def saveLoadTestFinal_old_20260416(postICA_final, json_data, experiment_dir, sub, start_time):
+    
+    filePKL=f'{experiment_dir}\\6.pkls\\{sub}_notebookState.pkl'
+    
+    # Function to filter out non-pickleable objects
+    def is_pickleable(obj):
+        try:
+            pickle.dumps(obj)
+            return True
+        except:
+            return False
+    
+    # Save the current state of all pickleable variables in the notebook
+    state = {name: val for name, val in globals().items() if is_pickleable(val) and not name.startswith('_')}
+    with open(filePKL, 'wb') as f:
+        pickle.dump(state, f)
+    
+    with open(filePKL, 'rb') as f:
+        data = pickle.load(f)
+    
+    for i in data.keys():
+        print(i)
+    
+    data = {}
     # 'epochs'
     # 'epochs_detrended'
     # , 'epochs_ica', 
@@ -1589,12 +2026,7 @@ def saveLoadTestFinal(postICA_final, json_data, experiment_dir, sub, start_time)
     plt.close()
 
     # json_data = add_TEP_to_json(json_data, postICA_final) # too much heavy use directly pkl
-    
-    # Salva il file di parametri aggiornato con tempo incluso
-    json_data_clean = make_json_serializable(json_data)
-    with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data_clean, json_file, indent=4)
-        
+           
     plot_TEP_1d_with_shading(postICA_final, f'{experiment_dir}/5.final/tep_1D.png')
 
     # Calcolo tempo totale di esecuzione
@@ -1606,7 +2038,6 @@ def saveLoadTestFinal(postICA_final, json_data, experiment_dir, sub, start_time)
     json_data_clean = make_json_serializable(json_data)
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
             json.dump(json_data_clean, json_file, indent=4)
-
             
     print(f"✅ Tempo totale di esecuzione: {elapsed_time:.2f} secondi")
 
@@ -1680,8 +2111,7 @@ def selectTEPfeat(EPOCH,  json_data, experiment_dir, sub, seed=['Cz', 'Fz']):
     json_data['feat_tep_manual'] = selected_peaks
     json_data_clean = make_json_serializable(json_data)
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data_clean, json_file, indent=4)
-
+            json.dump(json_data_clean, json_file, indent=4, sort_keys=True)
 
 def set_plot_params(fontsize=16):
     plt.rcParams.update({
@@ -1760,7 +2190,119 @@ def compute_condition_number_epochs_average(epochs):
 
     return condition_number
 
+
 def run_ica_filtering_v3(EPOCHS, json_data, experiment_dir, sub,
+                         n_components=None, manualCheck=True,
+                         autoReject=True, label_prob_threshold=0,
+                         threshold_percentile=75):
+
+    from pathlib import Path
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mne.preprocessing import ICA
+    from mne_icalabel import label_components
+
+    save_dir = Path(experiment_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    ica = ICA(n_components=n_components, method='fastica', random_state=42)
+    ica.fit(EPOCHS)
+
+    ic_labels = label_components(EPOCHS, ica, method='iclabel')
+    labels = ic_labels['labels']
+
+    artifact_tags = ['eye blink', 'muscle artifact', 'heart beat', 'line noise', 'channel noise', 'other']
+    auto_excluded = []
+    low_eigen_excluded = []
+
+    if autoReject:
+        for i, label in enumerate(labels):
+            probs = np.array(ic_labels['y_pred_proba'][i], ndmin=1)
+            max_prob = probs.max()
+            if label in artifact_tags and max_prob >= label_prob_threshold:
+                print(f"❌ IC {i}: {label} (prob: {max_prob:.2f}) – escluso")
+                auto_excluded.append(i)
+            else:
+                print(f"✅ IC {i}: {label} (prob: {max_prob:.2f}) – mantenuto")
+
+        print(f"[Auto-tagging] Componenti escluse per label ICLabel: {auto_excluded}")
+
+        mixing_matrix = ica.mixing_matrix_
+        eigenvalues = np.linalg.svd(mixing_matrix, compute_uv=False) ** 2
+        threshold = np.percentile(eigenvalues, threshold_percentile)
+        low_eigen_excluded = np.where(eigenvalues <= threshold)[0].tolist()
+        print(f"[Autovalori] Componenti escluse (eigenvalue < {threshold:.4f}): {low_eigen_excluded}")
+    else:
+        print("🚫 Esclusione automatica disattivata.")
+        mixing_matrix = ica.mixing_matrix_
+        eigenvalues = np.linalg.svd(mixing_matrix, compute_uv=False) ** 2
+        threshold = np.percentile(eigenvalues, threshold_percentile)
+
+    excluded_components = sorted(set(auto_excluded + low_eigen_excluded)) if autoReject else []
+    ica.exclude = excluded_components
+
+    postICA_raw = ica.apply(EPOCHS.copy())
+
+    all_components = set(np.arange(ica.get_components().shape[1]))
+    remaining_components = list(all_components - set(excluded_components))
+
+    if excluded_components:
+        fig1 = ica.plot_components(picks=excluded_components, show_names=False, show=False)
+        fig1.savefig(save_dir / f'{sub}_excluded_ICAs.png')
+        plt.close(fig1)
+
+    if remaining_components:
+        fig2 = ica.plot_components(picks=remaining_components, show_names=False, show=False)
+        fig2.savefig(save_dir / f'{sub}_included_ICAs.png')
+        plt.close(fig2)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    above_threshold = np.where(eigenvalues >= threshold)[0]
+    below_threshold = np.where(eigenvalues < threshold)[0]
+    ax.plot(below_threshold, eigenvalues[below_threshold], marker='o', linestyle='-', color='black', label='Eigenvalues')
+    ax.scatter(above_threshold, eigenvalues[above_threshold], color='red', label='Above Threshold', zorder=3)
+    ax.axhline(threshold, color='r', linestyle='--', label=f'Threshold ({threshold_percentile}° percentile)')
+    ax.set_xlabel("ICA Component")
+    ax.set_ylabel("Eigenvalue")
+    ax.set_title(f"Eigenvalues of ICA Components (Above Threshold: {len(above_threshold)})")
+    ax.legend()
+    fig.savefig(save_dir / f'{sub}_eigenvalueDist.png')
+    plt.close(fig)
+
+    components_dir = save_dir / 'components'
+    components_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"[INFO] Salvataggio componenti ICA in: {components_dir}")
+
+    for idx in range(ica.n_components_):
+        tag = labels[idx] if labels is not None else 'Unknown'
+        tag_clean = tag.replace('/', '_').replace(' ', '')
+        fig = ica.plot_components(picks=idx, show=False)
+        if isinstance(fig, list):
+            for i, f in enumerate(fig):
+                fname = components_dir / f"component_{idx}_{tag_clean}_view{i}.png"
+                f.savefig(fname, dpi=150)
+                plt.close(f)
+        else:
+            fname = components_dir / f"component_{idx}_{tag_clean}.png"
+            fig.savefig(fname, dpi=150)
+            plt.close(fig)
+
+    if manualCheck:
+        try:
+            import tmspath_utils_adj
+            ica = tmspath_utils_adj.ICApp(ica, postICA_raw)
+            postICA_clean = ica.apply(postICA_raw.copy())
+        except ImportError:
+            print("⚠️ tmspath_utils_adj non disponibile. Salto ispezione manuale.")
+            postICA_clean = postICA_raw
+    else:
+        postICA_clean = postICA_raw
+
+    return postICA_clean, ica
+
+
+def run_ica_filtering_v3_old_20260416(EPOCHS, json_data, experiment_dir, sub,
                          n_components=None, manualCheck=True,
                           autoReject=True, label_prob_threshold=0,
                           threshold_percentile=75,
@@ -2606,7 +3148,7 @@ def extract_psd_features(epochs, note, experiment_dir, json_data):
     print(f"✅ FOOOF PSD features salvate e plottate in: {save_dir}")
     return df
     
-def save_bad_epochs_and_channels(info_string, json_data):
+def save_bad_epochs_and_channels(info_string, experiment_dir, sub, json_data):
     marker_epochs = "The following epochs were marked as bad and are dropped:"
     bad_epochs = ""
     
@@ -2620,8 +3162,7 @@ def save_bad_epochs_and_channels(info_string, json_data):
     
     # Salva parametri
     with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as json_file:
-            json.dump(json_data, json_file, indent=4)
-
+            json.dump(json_data, json_file, indent=4, sort_keys=True)
 
 def plotTrialTepVariability(epochs, json_data, experiment_dir, sub, chanNAME='AF3', operator=np.mean, save=False, 
                             figsize=FIGSIZE, parDir='preDetrend'):
@@ -2644,9 +3185,15 @@ def plotTrialTepVariability(epochs, json_data, experiment_dir, sub, chanNAME='AF
 def computeTimeMasks(epochs, chan, trial, json_data, do_plot=False, offset=0.20, plot_path=None, plot_title=None):
     import numpy as np
     t=epochs.times
+
     n=t.size
     data=epochs.get_data()
     sigAll=data[trial,chan,:] if data.ndim==3 else data[chan,:]
+
+    #print("len(t) =", len(t))
+    #print("data.shape =", data.shape)
+    #print("len(sigAll) =", len(sigAll))
+    
     def range_to_mask_by_t(t_start,t_end):
         i_start=int(np.searchsorted(t,t_start,side='left'))
         i_end=int(np.searchsorted(t,t_end,side='right'))-1
@@ -2698,6 +3245,11 @@ def computeTimeMasks(epochs, chan, trial, json_data, do_plot=False, offset=0.20,
             plt.savefig(plot_path,dpi=150,bbox_inches='tight');plt.close()
         else:
             plt.show()
+
+    assert len(maskPreOffset) == len(t), f"maskPreOffset={len(maskPreOffset)} t={len(t)}"
+    assert len(maskOffset) == len(t), f"maskOffset={len(maskOffset)} t={len(t)}"
+    assert len(maskPostOffset) == len(t), f"maskPostOffset={len(maskPostOffset)} t={len(t)}"
+    
     return maskPreOffset,maskOffset,maskPostOffset
 
 
@@ -2886,6 +3438,85 @@ def computeTimeMasks_old(epochs, chan, trial, do_plot=False, offset=0.20):
     return maskPreOffset, maskOffset, maskPostOffset
 
 def computeSlopes_v4(epochs, json_data, experiment_dir, sub, saveNote=f'plotTrialTepVariability'):
+    """
+    Compute slopes of linear regressions for EEG data across time windows and trials.
+    
+    Parameters:
+        epochs: MNE Epochs object
+            EEG data segmented into epochs.
+        normalized_distances: array
+            Array of normalized distances for each channel.
+        channel_names: list
+            List of channel names corresponding to the distances.
+        saveNote: str
+            A string used for saving plots or notes.
+
+    Returns:
+        df_slopes: DataFrame
+            Dataframe containing slopes, intercepts, and distance information.
+    """
+    # compute distance
+    evoked = epochs
+    positions = np.array([ch['loc'][:3] for ch in evoked.info['chs']])  # Estrai solo le coordinate (x, y, z)
+    seed_channels = json_data['seedChans']
+    seed_indices = [evoked.info['ch_names'].index(ch_name) for ch_name in seed_channels]
+    seed_positions = positions[seed_indices]
+    mean_seed_position = np.mean(seed_positions, axis=0)
+    distances_from_seed = np.zeros(len(positions))
+    for i in range(len(positions)):
+        distances_from_seed[i] = euclidean(mean_seed_position, positions[i])
+    min_distance = np.min(distances_from_seed)
+    normalized_distances = (distances_from_seed - min_distance) / (np.max(distances_from_seed) - min_distance)
+    # Create a mapping of channel names to distances
+    channel_distance_mapping = dict(zip(evoked.info['ch_names'], normalized_distances))
+    
+    timeMaskLabels = ['preOffset', 'offset', 'postOffset']
+    slopes = []
+
+    for chan in tqdm(epochs.ch_names):
+        id_chan = np.where(np.array(epochs.ch_names) == chan)[0][0]
+
+        if len(epochs.get_data().shape) > 2:
+            for id_trial in range(epochs.get_data().shape[0]):
+                timeMask = computeTimeMasks(epochs, id_chan, id_trial, json_data, offset=json_data['detrend_maxTimeWindowOffset'])
+                for t_label, id_t, t_mask in zip(timeMaskLabels, [0, 1, 2], timeMask):
+                    y = epochs.get_data()[id_trial, id_chan, t_mask]
+                    slope, intercept, _, _, _ = linregress(epochs.times[t_mask], y)
+                    slopes.append([t_label, id_trial, chan, intercept, slope])
+
+        elif len(epochs.get_data().shape) == 2:
+            id_trial = 0
+            timeMask = computeTimeMasks(epochs, id_chan, id_trial, json_data, offset=json_data['detrend_maxTimeWindowOffset'])
+            for t_label, id_t, t_mask in zip(timeMaskLabels, [0, 1, 2], timeMask):
+                y = epochs.get_data()[id_chan, t_mask]
+                slope, intercept, _, _, _ = linregress(epochs.times[t_mask], y)
+                slopes.append([t_label, id_trial, chan, intercept, slope])
+
+    # Convert slopes list to DataFrame
+    df_slopes = pd.DataFrame(data=slopes, 
+                             columns=['id_twindow', 'id_trial', 'chan', 'intercept', 'slope'])
+
+    # Add the 'distanceFromSeed' column using the channel distance mapping
+    df_slopes['distanceFromSeed'] = df_slopes['chan'].map(channel_distance_mapping)
+
+    # Compute Z-scores for slopes within each time window
+    df_slopes['Zslope'] = np.nan
+    for time_label in timeMaskLabels:
+        mask = df_slopes['id_twindow'] == time_label
+        vals = df_slopes.loc[mask, 'slope'].values.astype(float)
+        std = np.nanstd(vals)
+        mean = np.nanmean(vals)
+        if np.isnan(std) or std == 0:
+            df_slopes.loc[mask, 'Zslope'] = 0.0
+        else:
+            df_slopes.loc[mask, 'Zslope'] = (vals - mean) / std
+
+    # add plot distance from seed vs slope
+
+    return df_slopes
+
+    
+def computeSlopes_v4_old(epochs, json_data, experiment_dir, sub, saveNote=f'plotTrialTepVariability'):
     """
     Compute slopes of linear regressions for EEG data across time windows and trials.
     
@@ -3220,7 +3851,8 @@ def computeSlopesPlot(df_slopes,
     df_slopes_seed = df_slopes[df_slopes["chan"].isin(json_data['seedChans'])]
     groups = [df_slopes_seed[df_slopes_seed['id_twindow'] == label][VAR] for label in timeMaskLabels]
     anova_stat, p_value = scipy.stats.f_oneway(*groups)
-    sns.kdeplot(data=df_slopes_seed, x='Zslope', hue='id_twindow', cumulative=False)
+    #sns.kdeplot(data=df_slopes_seed, x='Zslope', hue='id_twindow', cumulative=False)
+    sns.kdeplot(data=df_slopes_seed, x=VAR, hue='id_twindow', cumulative=False)
     plt.xlim(-7, 7) if zvalue else plt.xlim(df_slopes_seed[VAR].min(), df_slopes_seed[VAR].max())
     plt.ylim(0, 0.75)
     #plt.title(f"ANOVA: F={anova_stat:.3f}, p={p_value:.3e} \n {json_data['seedChans']}") #\n {multimodal_text}")
@@ -3759,9 +4391,20 @@ def computeDetrend_v6(EPOCHS,
         id_chan = np.where(np.array(EPOCHS.ch_names) == chan)[0][0]
         for epoch_idx in range(data_detrended.shape[0]):
             tep = data_detrended[epoch_idx, id_chan, :].reshape(-1, 1)
+            #print("len(tep) =", len(tep))
+            #assert len(tep) == len(times), f"len(tep)={len(tep)} len(times)={len(times)}"
+            
             TEP = tep.copy()
             timeMask = computeTimeMasks(EPOCHS, id_chan, epoch_idx, json_data, offset=json_data['detrend_maxTimeWindowOffset'])
-            
+            """
+            print("len(times) =", len(times))
+            print("len(mask0) =", len(timeMask[0]))
+            print("len(mask1) =", len(timeMask[1]))
+            print("len(mask2) =", len(timeMask[2]))
+            assert len(timeMask[0]) == len(times)
+            assert len(timeMask[1]) == len(times)
+            assert len(timeMask[2]) == len(times)
+            """
             # --- PRE OFFSET detrending (segmento centrale: timeMask[0]) ---
             poly_coeffs_A = np.polyfit(times[timeMask[0]], tep[timeMask[0]].flatten(), json_data['detrend_polOrder_preOffset'])
             trend_line_A = np.polyval(poly_coeffs_A, times[timeMask[0]])
@@ -4128,10 +4771,20 @@ def computeDetrend_v6(EPOCHS,
                 experiment_dir=experiment_dir,
                 PROB=PROB
                 )
-   
+
     MSE = np.mean(mse_list)
-    EPOCHS_DETRENDED = mne.EpochsArray(data_detrended, EPOCHS.info, tmin=EPOCHS.tmin)
-    df_tabStat = pd.DataFrame(tabStat, columns=['chan', 'epoch_idx', 'mseA', 'mseB', 'mseC', 'OPTPARS_A', 'OPTPARS_B', 'OPTPARS_C'])
+    EPOCHS_DETRENDED = EPOCHS.copy()
+    EPOCHS_DETRENDED._data = np.asarray(data_detrended).copy()   
+    print("INPUT data shape:", EPOCHS.get_data().shape)
+    print("INPUT times len:", len(EPOCHS.times))
+    print("DETRENDED data shape:", EPOCHS_DETRENDED.get_data().shape)
+    print("DETRENDED times len:", len(EPOCHS_DETRENDED.times))
+    assert EPOCHS_DETRENDED.get_data().shape[2] == len(EPOCHS_DETRENDED.times), \
+        f"{EPOCHS_DETRENDED.get_data().shape[2]} vs {len(EPOCHS_DETRENDED.times)}"
+    df_tabStat = pd.DataFrame(
+        tabStat,
+        columns=['chan', 'epoch_idx', 'mseA', 'mseB', 'mseC', 'OPTPARS_A', 'OPTPARS_B', 'OPTPARS_C']
+    )
     tabStat_path = os.path.join(experiment_dir, '2.detrend', f'tabStatDetrend_{typeOffsetDecay}.csv')
     df_tabStat.to_csv(tabStat_path, index=False)
     print(f"[INFO] Salvato tabStat in: {tabStat_path}")
