@@ -518,6 +518,7 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
         save_layout_and_metadata(raw, 'no_events')
         return raw, events, json_data
 
+    """
     # === CASO MAYER ===
     if source == 'MAYER':
         # json_data['pulse_artifact_rej_timewindow_min'] = -0.002
@@ -528,8 +529,10 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
             data = df.values.T * 1e-6
             ASCII_events = np.where(df['MK'] == df['MK'].unique()[1])[0]
             raw = loadEDF(json_data, fileName)
-            rename_dict = {'T3': 'FT7', 'T4': 'FT8', 'T5': 'TP7', 'T6': 'TP8'}
-            raw.rename_channels(rename_dict)
+            do_runame=False
+            if do_runame:
+                rename_dict = {'T3': 'FT7', 'T4': 'FT8', 'T5': 'TP7', 'T6': 'TP8'}
+                raw.rename_channels(rename_dict)
             raw.set_montage('easycap-M1', verbose=True)
             raw._data = data[:len(raw.ch_names)]
             json_data['ch_names'] = raw.ch_names
@@ -541,6 +544,67 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
             json_data['sfreq'] = raw.info['sfreq']
             save_layout_and_metadata(raw, saveNote)
             return raw, events, json_data
+    """
+    # === CASO MAYER === NEW (30/06/2026) (AS THE OLD!)
+    if source == 'MAYER':
+        if dataType == 'ASCII':
+            df = loadASCII(fileName, fileName)
+            data = df.values.T * 1e-6
+            ASCII_events = np.where(df['MK'] == df['MK'].unique()[1])[0]
+            raw = loadEDF(json_data, fileName)
+            rename_case = {
+                'FPz': 'Fpz',
+                'Fc1': 'FC1',
+                'Fc2': 'FC2',
+                'Af4': 'AF4',
+                'Fc5': 'FC5',
+                'Fc6': 'FC6',
+                'Po3': 'PO3',
+                'Tp9': 'TP9',
+                'Tp10': 'TP10',
+                'Po4': 'PO4',
+                'Cp1': 'CP1',
+                'Cp2': 'CP2',
+                'Cp5': 'CP5',
+                'Cp6': 'CP6'
+            }
+            raw.rename_channels({
+                k: v for k, v in rename_case.items()
+                if k in raw.ch_names
+            })
+            ch_types = {}
+            if 'TM' in raw.ch_names:
+                ch_types['TM'] = 'misc'
+            if 'MK' in raw.ch_names:
+                ch_types['MK'] = 'stim'
+            if ch_types:
+                raw.set_channel_types(ch_types)
+            montage_new = mne.channels.read_custom_montage('../outputFile.csv')
+            montage_ref = mne.channels.make_standard_montage('standard_1020')
+            desired_channels = montage_new.ch_names
+            ref_positions = montage_ref.get_positions()['ch_pos']
+            desired_positions = {
+                ch: ref_positions[ch]
+                for ch in desired_channels
+                if ch in ref_positions
+            }
+            missing = [ch for ch in desired_channels if ch not in ref_positions]
+            print("Missing from standard_1020:", missing)
+            montage = mne.channels.make_dig_montage(
+                ch_pos=desired_positions,
+                coord_frame='head'
+            )
+            raw.set_montage(montage, on_missing='warn')
+            raw._data = data[:len(raw.ch_names)]
+            json_data['ch_names'] = raw.ch_names
+            events, event_id = mne.events_from_annotations(raw, verbose=False)
+            TMScode = np.unique(events[:, 2])[0]
+            events = events[events[:, 2] == TMScode]
+            saveNote = 'EDF_events'
+            json_data['TEP_ID_events'] = saveNote
+            json_data['sfreq'] = raw.info['sfreq']
+            save_layout_and_metadata(raw, saveNote)
+        return raw, events, json_data
 
     # === CASO CHALFONT ===
     if 'Chalfont' in source:
@@ -775,6 +839,248 @@ def filter_and_plot_raw(raw, json_data, experiment_dir, sub, figsize=(10, 6), su
     return raw
 
 def clean_trials_channels(raw, events, json_data, experiment_dir, sub, seedChans=None):
+    import mne, numpy as np, sys, io, json, re, ast
+    from pathlib import Path
+
+    def clean_bad_trials_list(x):
+        if x is None:
+            return []
+        if isinstance(x, np.ndarray):
+            x = x.tolist()
+        if isinstance(x, str):
+            x = x.strip()
+            if x == "":
+                return []
+            try:
+                parsed = ast.literal_eval(x)
+                return clean_bad_trials_list(parsed)
+            except Exception:
+                nums = re.findall(r"\d+", x)
+                return sorted(set([int(n) for n in nums]))
+        if isinstance(x, (list, tuple, set)):
+            out = []
+            for item in x:
+                if item is None:
+                    continue
+                if isinstance(item, (int, np.integer)):
+                    out.append(int(item))
+                elif isinstance(item, float) and item.is_integer():
+                    out.append(int(item))
+                elif isinstance(item, str):
+                    item = item.strip()
+                    if item == "" or item in ["[", "]", ","]:
+                        continue
+                    try:
+                        parsed = ast.literal_eval(item)
+                        if isinstance(parsed, (list, tuple, set, np.ndarray)):
+                            out.extend(clean_bad_trials_list(parsed))
+                        elif isinstance(parsed, (int, np.integer)):
+                            out.append(int(parsed))
+                        elif isinstance(parsed, float) and parsed.is_integer():
+                            out.append(int(parsed))
+                    except Exception:
+                        nums = re.findall(r"\d+", item)
+                        out.extend([int(n) for n in nums])
+            return sorted(set(out))
+        if isinstance(x, (int, np.integer)):
+            return [int(x)]
+        if isinstance(x, float) and x.is_integer():
+            return [int(x)]
+        return []
+
+    def clean_bad_channels_list(x, valid_chans):
+        if x is None:
+            return []
+        if isinstance(x, str):
+            x = x.strip()
+            if x == "":
+                return []
+            try:
+                parsed = ast.literal_eval(x)
+                return clean_bad_channels_list(parsed, valid_chans)
+            except Exception:
+                return [x] if x in valid_chans else []
+        if isinstance(x, (list, tuple, set, np.ndarray)):
+            return sorted(set([str(ch).strip() for ch in x if str(ch).strip() in valid_chans]))
+        return []
+
+    if seedChans is None:
+        seedChans = json_data.get("seedChans", [])
+
+    if "bad_trials" not in json_data or json_data["bad_trials"] is None:
+        json_data["bad_trials"] = []
+
+    if "bad_channels" not in json_data or json_data["bad_channels"] is None:
+        json_data["bad_channels"] = []
+
+    do_auto = json_data.get("do_chan_trials_selection_automatic", False)
+
+    raw_copy = raw.copy()
+
+    raw_copy.filter(
+        l_freq=json_data["l_freq"],
+        h_freq=json_data["h_freq"],
+        method="iir",
+        iir_params=dict(order=3, ftype="butter", phase="zero-double", btype="bandpass"),
+        verbose=True
+    )
+
+    temp_epochs = mne.Epochs(
+        raw_copy,
+        events,
+        tmin=-0.8,
+        tmax=8,
+        detrend=None,
+        preload=True
+    )
+
+    temp_epochs = temp_epochs.pick("eeg")
+    temp_epochs = temp_epochs.set_eeg_reference("average")
+
+    n_trials_before = len(temp_epochs)
+
+    json_data["bad_channels"] = clean_bad_channels_list(
+        json_data.get("bad_channels", []),
+        temp_epochs.ch_names
+    )
+
+    json_data["bad_trials"] = clean_bad_trials_list(
+        json_data.get("bad_trials", [])
+    )
+
+    data = temp_epochs.get_data()
+
+    # here are pars for controlling automatic rejection of trials and chans
+    # AUTOCHANTRIALSREJ
+    chan_var = np.var(data, axis=(0, 2))
+    thresh_low = np.percentile(chan_var, 5)
+    thresh_high = np.percentile(chan_var, 95)
+    auto_bad_channels = [
+        ch for ch, var in zip(temp_epochs.ch_names, chan_var)
+        if var < thresh_low or var > thresh_high
+    ]
+    auto_bad_channels = [ch for ch in auto_bad_channels if ch not in seedChans]
+    trial_var = np.var(data, axis=(1, 2))
+    t_low = np.percentile(trial_var, 5)
+    t_high = np.percentile(trial_var, 95)
+
+    auto_bad_trials = np.where((trial_var < t_low) | (trial_var > t_high))[0].tolist()
+
+    if do_auto:
+        print("🤖 Automatic artifact rejection")
+
+        final_bad_channels = clean_bad_channels_list(auto_bad_channels, temp_epochs.ch_names)
+        final_bad_trials = clean_bad_trials_list(auto_bad_trials)
+
+        json_data["bad_channels"] = final_bad_channels
+        json_data["bad_trials"] = final_bad_trials
+
+        if len(final_bad_trials) > 0:
+            keep_idx = np.where(~np.isin(temp_epochs.selection, final_bad_trials))[0]
+            temp_epochs = temp_epochs[keep_idx]
+
+        if len(final_bad_channels) > 0:
+            print(f"🧹 Dropping automatic bad channels: {final_bad_channels}")
+            temp_epochs.drop_channels(final_bad_channels)
+
+    else:
+        print("🖱️ Manual artifact rejection")
+
+        user_bad_channels = clean_bad_channels_list(
+            json_data.get("bad_channels", []),
+            temp_epochs.ch_names
+        )
+
+        user_bad_trials = clean_bad_trials_list(
+            json_data.get("bad_trials", [])
+        )
+
+        if len(user_bad_channels) > 0:
+            print("📌 Using user-defined bad_channels before GUI")
+            print(f"I am marking channels: {user_bad_channels}")
+            temp_epochs.info["bads"] = user_bad_channels
+        else:
+            print("📌 No user-defined bad_channels: GUI starts with clean channels")
+            temp_epochs.info["bads"] = []
+
+        if len(user_bad_trials) > 0:
+            print("📌 User-defined bad_trials present")
+            print(f"These trials will be removed after GUI: {user_bad_trials}")
+        else:
+            print("📌 No user-defined bad_trials: all trials kept unless selected in GUI")
+
+        buffer = io.StringIO()
+        old_stdout = sys.stdout
+        sys.stdout = buffer
+
+        temp_epochs.plot(
+            butterfly=False,
+            n_epochs=5,
+            n_channels=len(temp_epochs.ch_names),
+            block=True,
+            use_opengl=True,
+            scalings={"eog": 50e-6}
+        )
+
+        sys.stdout = old_stdout
+        log_message = buffer.getvalue()
+
+        save_bad_epochs_and_channels(log_message, experiment_dir, sub, json_data)
+        print(log_message)
+
+        gui_bad_channels = clean_bad_channels_list(
+            temp_epochs.info["bads"],
+            temp_epochs.ch_names
+        )
+
+        gui_bad_trials = clean_bad_trials_list(
+            json_data.get("bad_trials", [])
+        )
+
+        final_bad_channels = sorted(set(user_bad_channels) | set(gui_bad_channels))
+        final_bad_trials = sorted(set(user_bad_trials) | set(gui_bad_trials))
+
+        json_data["bad_channels"] = final_bad_channels
+        json_data["bad_trials"] = final_bad_trials
+
+        if len(final_bad_trials) > 0:
+            print(f"🧹 Dropping bad trials: {final_bad_trials}")
+            keep_idx = np.where(~np.isin(temp_epochs.selection, final_bad_trials))[0]
+            temp_epochs = temp_epochs[keep_idx]
+
+        if len(final_bad_channels) > 0:
+            print(f"🧹 Dropping bad channels: {final_bad_channels}")
+            temp_epochs.drop_channels(final_bad_channels)
+
+    json_data["bad_trials"] = clean_bad_trials_list(json_data.get("bad_trials", []))
+    json_data["bad_channels"] = clean_bad_channels_list(
+        json_data.get("bad_channels", []),
+        raw.copy().pick("eeg").ch_names
+    )
+
+    json_data["trials_tot"] = int(n_trials_before)
+    json_data["trials_selected"] = int(len(temp_epochs))
+    json_data["channels_tot"] = int(len(raw.copy().pick("eeg").ch_names))
+    json_data["channels_dropped"] = json_data["bad_channels"]
+    json_data["channels_selected"] = int(len(temp_epochs.ch_names))
+    json_data["ch_names_after_cleaning"] = list(temp_epochs.ch_names)
+
+    temp_epochs = temp_epochs.resample(sfreq=json_data["r_sfreq"])
+    temp_epochs = temp_epochs.set_eeg_reference("average")
+
+    with open(Path(experiment_dir) / f"{sub}_pars.json", "w") as json_file:
+        json.dump(json_data, json_file, indent=4, sort_keys=True)
+
+    print("✅ clean_trials_channels completed")
+    print(f"   Trials kept: {json_data['trials_selected']} / {json_data['trials_tot']}")
+    print(f"   Channels kept: {json_data['channels_selected']} / {json_data['channels_tot']}")
+    print(f"   Dropped channels: {json_data['bad_channels']}")
+
+    return temp_epochs, json_data
+
+"""
+changed on 30/06/2026
+def clean_trials_channels(raw, events, json_data, experiment_dir, sub, seedChans=None):
     import mne, numpy as np, sys, io, json
     from pathlib import Path
 
@@ -799,8 +1105,10 @@ def clean_trials_channels(raw, events, json_data, experiment_dir, sub, seedChans
     temp_epochs = mne.Epochs(
         raw_copy,
         events,
-        tmin=json_data['epochs_timewindow_min'],
-        tmax=json_data['epochs_timewindow_max'],
+        # tmin=json_data['epochs_timewindow_min'], v2.2
+        # tmax=json_data['epochs_timewindow_max'], v2.2
+        tmin=-0.8, # different epoching for larger visualization v1
+        tmax=8, # v1
         detrend=None,
         preload=True
     )
@@ -842,7 +1150,7 @@ def clean_trials_channels(raw, events, json_data, experiment_dir, sub, seedChans
         sys.stdout = buffer
         temp_epochs.plot(
             butterfly=False,
-            n_epochs=20,
+            n_epochs=5, # 5 v1 # 20, v2.2
             n_channels=raw.info['nchan'],
             block=True,
             use_opengl=True,
@@ -883,7 +1191,7 @@ def clean_trials_channels(raw, events, json_data, experiment_dir, sub, seedChans
         json.dump(json_data, json_file, indent=4, sort_keys=True)
 
     return temp_epochs, json_data
-    
+"""    
 
 def clean_trials_channels_old_20260416(raw, events, json_data, experiment_dir, sub, seedChans=None):
     import mne, numpy as np, sys, io
@@ -1288,6 +1596,67 @@ def apply_notch_filter(data, fs, notch_freqs, quality_factor=30):
 def prepare_epochs(raw, events, temp_epochs, json_data, experiment_dir, sub):
     from pathlib import Path
     import pickle
+    import json
+    import mne
+
+    epochs = mne.Epochs(
+        raw,
+        events,
+        tmin=json_data["epochs_timewindow_min"],
+        tmax=json_data["epochs_timewindow_max"],
+        detrend=None,
+        preload=True
+    )
+
+    epochs = epochs[temp_epochs.selection]
+    epochs = epochs.pick("eeg")
+
+    bad_channels = json_data.get("bad_channels", [])
+    bad_channels = [ch for ch in bad_channels if ch in epochs.ch_names]
+
+    if len(bad_channels) > 0:
+        print(f"🧹 Dropping bad channels also from final epochs: {bad_channels}")
+        epochs.drop_channels(bad_channels)
+
+    epochs = epochs.resample(json_data["r_sfreq"])
+    epochs = epochs.set_eeg_reference("average")
+
+    json_data["epochs_final_trials"] = int(len(epochs))
+    json_data["epochs_final_channels"] = int(len(epochs.ch_names))
+    json_data["epochs_final_ch_names"] = list(epochs.ch_names)
+    json_data["cn_epochs"] = compute_condition_number_epochs_average(epochs)
+
+    basicPlots(
+        epochs,
+        json_data,
+        experiment_dir,
+        sub,
+        key="epochs",
+        subPath="1.basic"
+    )
+
+    pkl_path = Path(experiment_dir) / "6.pkls" / f"{sub}_epochs.pkl"
+    with open(pkl_path, "wb") as f:
+        pickle.dump(epochs, f)
+
+    with open(Path(experiment_dir) / f"{sub}_pars.json", "w") as json_file:
+        json.dump(json_data, json_file, indent=4, sort_keys=True)
+
+    with open(pkl_path, "rb") as f:
+        epochs = pickle.load(f)
+
+    print("✅ prepare_epochs completed")
+    print(f"   Final trials: {json_data['epochs_final_trials']}")
+    print(f"   Final channels: {json_data['epochs_final_channels']}")
+    print(f"   Final channel names: {json_data['epochs_final_ch_names']}")
+
+    return epochs, json_data
+
+"""
+until 01/07/2026
+def prepare_epochs(raw, events, temp_epochs, json_data, experiment_dir, sub):
+    from pathlib import Path
+    import pickle
     import mne
 
     epochs = mne.Epochs(
@@ -1316,6 +1685,7 @@ def prepare_epochs(raw, events, temp_epochs, json_data, experiment_dir, sub):
         epochs = pickle.load(f)
 
     return epochs, json_data
+"""
 
 def analyze_offset_times(epochs, json_data, experiment_dir, sub, do_plot_variability=True):
     import numpy as np
@@ -2190,7 +2560,187 @@ def compute_condition_number_epochs_average(epochs):
 
     return condition_number
 
+def run_ica_filtering_v3(EPOCHS, json_data, experiment_dir, sub,
+                         n_components=None, manualCheck=True,
+                         autoReject=True, label_prob_threshold=0,
+                         threshold_percentile=75):
 
+    from pathlib import Path
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mne.preprocessing import ICA
+    from mne_icalabel import label_components
+    import json
+
+    save_dir = Path(experiment_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    ica = ICA(n_components=n_components, method='fastica', random_state=42)
+    ica.fit(EPOCHS)
+
+    ic_labels = label_components(EPOCHS, ica, method='iclabel')
+    labels = ic_labels['labels']
+
+    artifact_tags = [
+        'eye blink',
+        'muscle artifact',
+        'heart beat',
+        'line noise',
+        'channel noise',
+        'other'
+    ]
+
+    auto_excluded = []
+    low_eigen_excluded = []
+
+    mixing_matrix = ica.mixing_matrix_
+    eigenvalues = np.linalg.svd(mixing_matrix, compute_uv=False) ** 2
+    threshold = np.percentile(eigenvalues, threshold_percentile)
+
+    if autoReject:
+        for i, label in enumerate(labels):
+            probs = np.array(ic_labels['y_pred_proba'][i], ndmin=1)
+            max_prob = probs.max()
+
+            if label in artifact_tags and max_prob >= label_prob_threshold:
+                print(f"❌ IC {i}: {label} (prob: {max_prob:.2f}) – escluso automaticamente")
+                auto_excluded.append(i)
+            else:
+                print(f"✅ IC {i}: {label} (prob: {max_prob:.2f}) – mantenuto automaticamente")
+
+        low_eigen_excluded = np.where(eigenvalues <= threshold)[0].tolist()
+
+        print(f"[Auto-tagging] Componenti escluse per ICLabel: {auto_excluded}")
+        print(f"[Autovalori] Componenti escluse eigenvalue <= {threshold:.4f}: {low_eigen_excluded}")
+
+    else:
+        print("🚫 Esclusione automatica disattivata.")
+
+    initial_excluded = sorted(set(auto_excluded + low_eigen_excluded)) if autoReject else []
+    ica.exclude = initial_excluded.copy()
+
+    json_data["ICA_autoExcludedComponents"] = [int(x) for x in auto_excluded]
+    json_data["ICA_lowEigenExcludedComponents"] = [int(x) for x in low_eigen_excluded]
+    json_data["ICA_initialExcludedComponents"] = [int(x) for x in initial_excluded]
+
+    all_components = set(np.arange(ica.n_components_))
+    initial_remaining = sorted(list(all_components - set(initial_excluded)))
+
+    if initial_excluded:
+        fig1 = ica.plot_components(picks=initial_excluded, show_names=False, show=False)
+        fig1.savefig(save_dir / f'{sub}_AUTO_excluded_ICAs.png')
+        plt.close(fig1)
+
+    if initial_remaining:
+        fig2 = ica.plot_components(picks=initial_remaining, show_names=False, show=False)
+        fig2.savefig(save_dir / f'{sub}_AUTO_included_ICAs.png')
+        plt.close(fig2)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    above_threshold = np.where(eigenvalues >= threshold)[0]
+    below_threshold = np.where(eigenvalues < threshold)[0]
+
+    ax.plot(
+        below_threshold,
+        eigenvalues[below_threshold],
+        marker='o',
+        linestyle='-',
+        color='black',
+        label='Eigenvalues'
+    )
+
+    ax.scatter(
+        above_threshold,
+        eigenvalues[above_threshold],
+        color='red',
+        label='Above threshold',
+        zorder=3
+    )
+
+    ax.axhline(
+        threshold,
+        color='r',
+        linestyle='--',
+        label=f'Threshold ({threshold_percentile}° percentile)'
+    )
+
+    ax.set_xlabel("ICA Component")
+    ax.set_ylabel("Eigenvalue")
+    ax.set_title(f"Eigenvalues of ICA Components")
+    ax.legend()
+    fig.savefig(save_dir / f'{sub}_eigenvalueDist.png')
+    plt.close(fig)
+
+    components_dir = save_dir / 'components'
+    components_dir.mkdir(parents=True, exist_ok=True)
+
+    for idx in range(ica.n_components_):
+        tag = labels[idx] if labels is not None else 'Unknown'
+        tag_clean = tag.replace('/', '_').replace(' ', '')
+
+        fig = ica.plot_components(picks=idx, show=False)
+
+        if isinstance(fig, list):
+            for i, f in enumerate(fig):
+                fname = components_dir / f"component_{idx}_{tag_clean}_view{i}.png"
+                f.savefig(fname, dpi=150)
+                plt.close(f)
+        else:
+            fname = components_dir / f"component_{idx}_{tag_clean}.png"
+            fig.savefig(fname, dpi=150)
+            plt.close(fig)
+
+    if manualCheck:
+        try:
+            import tmspath_utils_adj
+
+            print(f"🖱️ Manual ICA check. Componenti pre-marcate: {ica.exclude}")
+            ica = tmspath_utils_adj.ICApp(ica, EPOCHS.copy())
+
+        except ImportError:
+            print("⚠️ tmspath_utils_adj non disponibile. Salto ispezione manuale.")
+
+    final_excluded = sorted(set([int(x) for x in ica.exclude]))
+    ica.exclude = final_excluded
+
+    json_data["ICA_finalExcludedComponents"] = final_excluded
+    json_data["ICA_manualAddedComponents"] = sorted(list(set(final_excluded) - set(initial_excluded)))
+    json_data["ICA_manualRecoveredComponents"] = sorted(list(set(initial_excluded) - set(final_excluded)))
+
+    print(f"📌 ICA initial excluded: {initial_excluded}")
+    print(f"📌 ICA final excluded:   {final_excluded}")
+    print(f"📌 ICA manual added:     {json_data['ICA_manualAddedComponents']}")
+    print(f"📌 ICA manual recovered: {json_data['ICA_manualRecoveredComponents']}")
+
+    postICA_clean = ica.apply(EPOCHS.copy())
+
+    final_remaining = sorted(list(all_components - set(final_excluded)))
+
+    if final_excluded:
+        fig3 = ica.plot_components(picks=final_excluded, show_names=False, show=False)
+        fig3.savefig(save_dir / f'{sub}_FINAL_excluded_ICAs.png')
+        plt.close(fig3)
+
+    if final_remaining:
+        fig4 = ica.plot_components(picks=final_remaining, show_names=False, show=False)
+        fig4.savefig(save_dir / f'{sub}_FINAL_included_ICAs.png')
+        plt.close(fig4)
+
+    with open(save_dir / f'{sub}_ICA_selection_summary.json', 'w') as f:
+        json.dump({
+            "auto_excluded": json_data["ICA_autoExcludedComponents"],
+            "low_eigen_excluded": json_data["ICA_lowEigenExcludedComponents"],
+            "initial_excluded": json_data["ICA_initialExcludedComponents"],
+            "final_excluded": json_data["ICA_finalExcludedComponents"],
+            "manual_added": json_data["ICA_manualAddedComponents"],
+            "manual_recovered": json_data["ICA_manualRecoveredComponents"]
+        }, f, indent=4)
+
+    return postICA_clean, ica
+
+
+"""
+until 01/07/2026
 def run_ica_filtering_v3(EPOCHS, json_data, experiment_dir, sub,
                          n_components=None, manualCheck=True,
                          autoReject=True, label_prob_threshold=0,
@@ -2300,7 +2850,7 @@ def run_ica_filtering_v3(EPOCHS, json_data, experiment_dir, sub,
         postICA_clean = postICA_raw
 
     return postICA_clean, ica
-
+"""
 
 def run_ica_filtering_v3_old_20260416(EPOCHS, json_data, experiment_dir, sub,
                          n_components=None, manualCheck=True,
@@ -2423,7 +2973,7 @@ def run_ica_filtering_v3_old_20260416(EPOCHS, json_data, experiment_dir, sub,
 
 def postICAsteps(postICA_raw, json_data, experiment_dir, sub):
     postICA_final = postICA_raw.copy().filter(l_freq=json_data['l_freq'],
-                                              h_freq=json_data['h_freq']*0.90, # *2
+                                              h_freq=json_data['h_freq'], #*0.90, # *2
                                               method = 'fir', #'iir', #, # NEW
                                               #iir_params = dict(order=3, ftype='butter', phase='zero-double',btype='bandpass'), # TEST IF WAS THIS FOR CIRCLING->YES
                                               verbose=True)
@@ -2746,7 +3296,9 @@ def run_ica_artist_ext_only(EPOCHS, n_components=None, ext_threshold_uv=30, manu
     os.makedirs(f'{experiment_dir}\\{subPath}', exist_ok=True)
 
     # ICA
-    ica = mne.preprocessing.ICA(n_components=n_components, method='fastica', random_state=42)
+    ica = mne.preprocessing.ICA(n_components=n_components,
+                                method='fastica', 
+                                random_state=42)
     ica.fit(EPOCHS)
 
     # Estrai le sorgenti ICA
