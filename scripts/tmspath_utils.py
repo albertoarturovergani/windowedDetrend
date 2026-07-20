@@ -497,7 +497,7 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
         # Salva parametri
         with open(Path(experiment_dir) / f'{sub}_pars.json', 'w') as txt_file:
             for key, value in sorted(json_data.items()):
-                txt_file.write(f'{key}: {value}\n')
+                txt_file.write(f'{key}: {value}\n')   
 
     # === CASO SIMS ===
     if source == 'SIMS':
@@ -547,10 +547,11 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
     """
     # === CASO MAYER === NEW (30/06/2026) (AS THE OLD!)
     if source == 'MAYER':
+
         if dataType == 'ASCII':
             df = loadASCII(fileName, fileName)
             data = df.values.T * 1e-6
-            ASCII_events = np.where(df['MK'] == df['MK'].unique()[1])[0]
+            ASCII_events = np.where(df['MK'] == df['MK'].unique()[1])[0] if json_data['eeg_type'] != 'rest' else None
             raw = loadEDF(json_data, fileName)
             rename_case = {
                 'FPz': 'Fpz',
@@ -579,22 +580,33 @@ def load_and_prepare_raw_data(fileName, json_data, experiment_dir, sub):
                 ch_types['MK'] = 'stim'
             if ch_types:
                 raw.set_channel_types(ch_types)
-            montage_new = mne.channels.read_custom_montage('../outputFile.csv')
-            montage_ref = mne.channels.make_standard_montage('standard_1020')
-            desired_channels = montage_new.ch_names
-            ref_positions = montage_ref.get_positions()['ch_pos']
-            desired_positions = {
-                ch: ref_positions[ch]
-                for ch in desired_channels
-                if ch in ref_positions
-            }
-            missing = [ch for ch in desired_channels if ch not in ref_positions]
-            print("Missing from standard_1020:", missing)
+
+            df = pd.read_csv("./outputFile.csv")
+            scale = 0.095-0.005
+            ch_pos = {}
+            for _, row in df.iterrows():
+                ch = row["labels"]
+                if ch not in raw.ch_names:
+                    continue
+                x = -float(row["Y"]) * scale
+                y =  float(row["X"]) * scale
+                z =  float(row["Z"]) * scale
+                if ch in ["TP9", "TP10"]:
+                    r = np.sqrt(x**2 + y**2)
+                    max_radius_tp = 0.086-0.050*0.50   # prova 0.088, 0.086, 0.084
+                    if r > max_radius_tp:
+                        shrink = max_radius_tp / r
+                        x *= shrink
+                        y *= shrink
+                ch_pos[ch] = np.array([x, y, z])
+            # print("TP9:", ch_pos["TP9"])
+            # print("TP10:", ch_pos["TP10"])
             montage = mne.channels.make_dig_montage(
-                ch_pos=desired_positions,
-                coord_frame='head'
+                ch_pos=ch_pos,
+                coord_frame="head"
             )
-            raw.set_montage(montage, on_missing='warn')
+            raw.set_montage(montage, on_missing="warn")
+        
             raw._data = data[:len(raw.ch_names)]
             json_data['ch_names'] = raw.ch_names
             events, event_id = mne.events_from_annotations(raw, verbose=False)
@@ -1835,8 +1847,9 @@ def ICAprocessing(file,
 
     label_prob_threshold = json_data['do_label_prob_threshold']
     threshold_percentile = json_data['do_ica_eigThresh']
-
-    print("""
+    
+    """
+    print(
     📚 Riferimento TEP:
     TMS of the primary motor cortex (M1) evokes several peaks, described
     at approximately 15 (N15), 30 (P30), 45 (N45), 60 (P60), 100 (N100),
@@ -1849,8 +1862,9 @@ def ICAprocessing(file,
     Paper:
     Hernandez-Pavon, J. C., Veniero, D., Bergmann, T. O., Belardinelli, P., Bortoletto, M., Casarotto, S., ... & Ilmoniemi, R. J. (2023). 
     TMS combined with EEG: Recommendations and open issues for data collection and analysis. Brain stimulation, 16(2), 567-593.
-    """)
-
+    )
+    """
+    
     print(f"⚙️ ICA eigThresh = {json_data['do_ica_eigThresh']}, label_prob_threshold = {json_data['do_label_prob_threshold']}")
 
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -2603,7 +2617,7 @@ def run_ica_filtering_v3(EPOCHS, json_data, experiment_dir, sub,
             max_prob = probs.max()
 
             if label in artifact_tags and max_prob >= label_prob_threshold:
-                print(f"❌ IC {i}: {label} (prob: {max_prob:.2f}) – escluso automaticamente")
+                print(f"❌ IC {i+1}: {label} (prob: {max_prob:.2f}) – escluso automaticamente") # prima era {i} e printava 0, ora parte da 1 come nella gui
                 auto_excluded.append(i)
             else:
                 print(f"✅ IC {i}: {label} (prob: {max_prob:.2f}) – mantenuto automaticamente")
@@ -3546,6 +3560,159 @@ def basicPlots(EPOCHS, json_data, experiment_dir, sub, key='epochs', subPath='1.
         plt.close()
 
     #plot_customTEP(EPOCHS, subPath, key, FIGSIZE)
+
+
+def create_butterfly_topomap_gif(
+    epochs,
+    json_data,
+    experiment_dir,
+    sub,
+    saveNote="postICA_final",
+    subPath="5.Extra",
+    tmin=None,
+    tmax=None,
+    step=0.001,
+    xlim=(-0.1,0.45),
+    vlim="p98",
+    sphere=0.095,
+    duration=50,
+    transparency=False,
+    dpi=120,
+    save_static=True
+):
+    import os
+    import imageio
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from pathlib import Path
+
+    out_dir=Path(experiment_dir)/subPath
+    out_dir.mkdir(parents=True,exist_ok=True)
+
+    if hasattr(epochs,"average"):
+        evoked=epochs.average()
+        data_epochs=epochs.get_data()
+        tep=np.mean(data_epochs,axis=0).T
+        times_data=epochs.times
+    elif hasattr(epochs,"data") and hasattr(epochs,"times"):
+        evoked=epochs
+        tep=evoked.data.T
+        times_data=evoked.times
+    else:
+        raise TypeError("epochs deve essere un oggetto mne.Epochs oppure mne.Evoked.")
+
+    if tmin is None:
+        tmin=float(times_data.min())
+
+    if tmax is None:
+        tmax=float(times_data.max())
+
+    tmin=max(tmin,float(times_data.min()))
+    tmax=min(tmax,float(times_data.max()))
+
+    times=np.round(np.arange(tmin,tmax+step,step),4)
+    times=[float(t) for t in times if tmin<=t<=tmax]
+
+    if vlim=="p98":
+        p=float(np.nanpercentile(np.abs(evoked.data),98))
+        vmin,vmax=-p,p
+    elif vlim=="p99":
+        p=float(np.nanpercentile(np.abs(evoked.data),99))
+        vmin,vmax=-p,p
+    elif isinstance(vlim,(tuple,list)) and len(vlim)==2:
+        vmin,vmax=float(vlim[0]),float(vlim[1])
+    else:
+        vmax=float(np.nanmax(np.abs(evoked.data)))
+        vmin=-vmax
+
+    fig_static,ax_static=plt.subplots(figsize=(12,6))
+    ax_static.plot(times_data,tep,c="b",alpha=0.5,linewidth=0.8)
+    ax_static.axvline(0,linewidth=2,c="k",alpha=0.5)
+    ax_static.set_xlim(xlim)
+    ax_static.set_xlabel("Time (s)")
+    ax_static.set_ylabel("Amplitude (V)")
+    ax_static.set_title(f"{sub} - {saveNote} butterfly")
+    ax_static.grid(True,alpha=0.3)
+    fig_static.tight_layout()
+
+    if save_static:
+        fig_static.savefig(out_dir/f"{sub}_{saveNote}_butterfly.png",dpi=300,bbox_inches="tight")
+        fig_static.savefig(out_dir/f"{sub}_{saveNote}_butterfly.svg",dpi=300,bbox_inches="tight")
+
+    plt.close(fig_static)
+
+    frames=[]
+
+    fig=plt.figure(figsize=(20,6),dpi=dpi)
+
+    if transparency:
+        fig.patch.set_alpha(0.0)
+
+    gs=fig.add_gridspec(1,3,width_ratios=[5,1,0.12])
+    ax_butterfly=fig.add_subplot(gs[0])
+    ax_topo=fig.add_subplot(gs[1])
+    ax_cbar=fig.add_subplot(gs[2])
+
+    ax_butterfly.plot(times_data,tep,c="b",alpha=0.5,linewidth=0.8)
+    ax_butterfly.axvline(0,linewidth=4,c="k",alpha=0.4)
+    ax_butterfly.set_xlim(xlim)
+    ax_butterfly.set_xlabel("Time (s)")
+    ax_butterfly.set_ylabel("Amplitude (V)")
+    ax_butterfly.set_title(f"{sub} - {saveNote}")
+    ax_butterfly.grid(True,alpha=0.3)
+
+    time_indicator=ax_butterfly.axvline(times[0],color="g",linestyle="--",linewidth=2)
+
+    for t in times:
+        time_indicator.set_xdata([t,t])
+
+        evoked.plot_topomap(
+            times=t,
+            ch_type="eeg",
+            contours=10,
+            show=False,
+            time_unit="s",
+            vlim=(vmin,vmax),
+            outlines="head",
+            extrapolate="head",
+            sphere=sphere,
+            sensors=False,
+            axes=[ax_topo,ax_cbar]
+        )
+
+        ax_topo.set_title(f"{t*1000:.0f} ms")
+
+        fig.canvas.draw()
+
+        image=np.frombuffer(fig.canvas.tostring_argb(),dtype=np.uint8)
+        image=image.reshape(fig.canvas.get_width_height()[::-1]+(4,))
+        image=np.roll(image,3,axis=2)
+
+        frames.append(image.copy())
+
+        ax_topo.clear()
+        ax_cbar.clear()
+
+    fig.tight_layout()
+
+    alpha_note="transparent" if transparency else "opaque"
+    gif_path=out_dir/f"{sub}_{saveNote}_butterfly_topomap_{alpha_note}.gif"
+
+    imageio.mimsave(
+        gif_path,
+        frames,
+        duration=duration,
+        loop=0
+    )
+
+    plt.close(fig)
+
+    json_data[f"gif_{saveNote}_butterfly_topomap"]=str(gif_path)
+
+    print(f"✅ GIF salvata: {gif_path}")
+
+    return gif_path,json_data
+    
 
 def runICA(detrendedEpochs):
 
