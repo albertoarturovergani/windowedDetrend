@@ -1,0 +1,5 @@
+include PAPER_ALIGNMENT.md
+include requirements.txt
+recursive-include tests *.py
+include validate_additional.py
+include CITATION.cff

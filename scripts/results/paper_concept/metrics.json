@@ -1,0 +1,51 @@
+{
+  "recovery_mse": {
+    "global": 257.2184357959379,
+    "windowed_exp": 3.1149428774238523,
+    "windowed_lagrange_3": 1.381314590208101
+  },
+  "interval_recovery_mse": {
+    "global": {
+      "early_10_30_ms": 767.2126846733665,
+      "late_30_250_ms": 211.08713782929772
+    },
+    "windowed_exp": {
+      "early_10_30_ms": 14.7352406991855,
+      "late_30_250_ms": 2.0638341199099575
+    },
+    "windowed_lagrange_3": {
+      "early_10_30_ms": 11.66033286499101,
+      "late_30_250_ms": 0.4515306644436468
+    }
+  },
+  "evaluation_window_ms": [
+    10.100000000000001,
+    249.9
+  ],
+  "fit_samples": 2399,
+  "global_parameters": [
+    -47.90328995752476,
+    0.8139402469952394,
+    -1639.240527465206
+  ],
+  "exp_rise_parameters": [
+    -94.137196351035,
+    2.994508170545814
+  ],
+  "exp_decay_parameters": [
+    219.6925191508781
+  ],
+  "poly_degrees": [
+    49,
+    3
+  ],
+  "polynomial_models": [
+    "lagrange",
+    "poly"
+  ],
+  "warnings": [
+    "Covariance of the parameters could not be estimated"
+  ],
+  "source": "2025_12_01_FigurePaper.ipynb, cells 3 and 5",
+  "note": "Conceptual framework computed from synthetic signals. Lagrange rise interpolation and cubic decay use the plugin default models with a fixed simulation peak. The bi-exponential is an external comparator, not a step of the windowed algorithm. The displayed comparator uses an unconstrained fit and has a nonphysical decay tau; this example is not a general ranking of bi-exponential methods. No fit uses neural truth. Lagrange removes all observed rise samples, including neural activity."
+}

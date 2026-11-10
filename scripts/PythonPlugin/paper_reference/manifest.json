@@ -1,0 +1,17 @@
+{
+  "paper_notebook": {
+    "file": "2025_12_01_FigurePaper.ipynb",
+    "sha256": "f1d7093c3556748b789af2ece1b48d2897f1bac521f407e0a25de8e6e9482dcc",
+    "definitions_cell_zero_based": 3,
+    "main_figure_cell": 5,
+    "supplementary_cell": 8
+  },
+  "pipeline_source": {
+    "file": "tmspath_utils.py",
+    "sha256": "2af7c411ecb717451f1064ef4f13d4a323370dcbc4d58502f3ec816e7f2cadb7",
+    "function": "computeDetrend_v6",
+    "lagrange_branch_line": 5802,
+    "polynomial_helper_line": 2786
+  },
+  "scope": "Unmodified numerical function definitions and Lagrange branch; controlled wrappers align inputs, windows and anchors. The full preprocessing pipeline is not executed."
+}

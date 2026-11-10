@@ -1,0 +1,16 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "python_core_tests": 6,
+  "wheel_install": "passed",
+  "mne_adapter": "passed on MNE 1.13.2",
+  "matlab": "R2023b core/EEGLAB passed",
+  "parity": {
+    "cases": 214,
+    "rows": 856,
+    "compared_to_python": true,
+    "max_absolute_difference": 1.6979750938617144e-12,
+    "tolerance": 1e-06,
+    "passed": true
+  },
+  "publication": "not performed"
+}

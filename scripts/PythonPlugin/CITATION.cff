@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, cite the accompanying paper and this software release."
+title: "windowedDetrend: standalone Python and MATLAB plugins"
+version: 0.1.0
+type: software
+authors:
+  - family-names: Vergani
+    given-names: Alberto Arturo
+repository-code: "https://github.com/albertoarturovergani/windowedDetrend"
+license: AGPL-3.0-only
+references:
+  - type: article
+    title: "Effective correction of extreme capacitive artifacts in TMS-EEG via windowed detrending"
+    doi: "10.1088/1741-2552/ae668e"
+    year: 2026
+    journal: "Journal of Neural Engineering"
+    volume: "23"
+    issue: "3"
+    start: "036009"
+    authors:
+      - family-names: Vergani
+        given-names: Alberto Arturo

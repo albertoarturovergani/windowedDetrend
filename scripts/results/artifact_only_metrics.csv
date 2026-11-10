@@ -1,0 +1,405 @@
+case,family,group,tau_rise_ms,tau_decay_ms,solver,mse_artifact_fit,status,nonpositive_tau,onset_ms,warning
+0,windowed,grid,1.0,25.0,bounded,0.043059233981948254,ok,False,10.0,
+0,windowed,grid,1.0,25.0,notebook,660.5105470929708,ok,True,4908.731900441128,Covariance of the parameters could not be estimated
+1,windowed,grid,1.0,50.0,bounded,0.013253147191662158,ok,False,10.0,
+1,windowed,grid,1.0,50.0,notebook,1174.4764334581878,ok,True,4555.34809499949,Covariance of the parameters could not be estimated
+2,windowed,grid,1.0,75.00000000000001,bounded,0.006594631678740904,ok,False,10.0,
+2,windowed,grid,1.0,75.00000000000001,notebook,1685.6819054549242,ok,True,4446.463817244131,Covariance of the parameters could not be estimated
+3,windowed,grid,1.0,100.0,bounded,0.015982143504731924,ok,False,10.0,
+3,windowed,grid,1.0,100.0,notebook,2183.9454062521236,ok,True,4396.850531584054,Covariance of the parameters could not be estimated
+4,windowed,grid,1.0,125.0,bounded,0.007701229328243622,ok,False,10.0,
+4,windowed,grid,1.0,125.0,notebook,2656.825038205009,ok,True,4358.117995610043,Covariance of the parameters could not be estimated
+5,windowed,grid,1.0,150.0,bounded,0.005432334802171613,ok,False,10.0,
+5,windowed,grid,1.0,150.0,notebook,3096.2902824084176,ok,True,4321.610295805399,Covariance of the parameters could not be estimated
+6,windowed,grid,1.0,175.00000000000003,bounded,0.00417297122597481,ok,False,10.0,
+6,windowed,grid,1.0,175.00000000000003,notebook,3499.373203686943,ok,True,4354.728915417361,Covariance of the parameters could not be estimated
+7,windowed,grid,1.0,200.0,bounded,0.012497358696516614,ok,False,10.0,
+7,windowed,grid,1.0,200.0,notebook,3866.481300727168,ok,True,4026.5433688185713,Covariance of the parameters could not be estimated
+8,windowed,grid,1.0,225.0,bounded,0.0029286107173474058,ok,False,10.0,
+8,windowed,grid,1.0,225.0,notebook,4199.801977016889,ok,True,3855.3286306565537,Covariance of the parameters could not be estimated
+9,windowed,grid,1.0,250.0,bounded,0.01462717412675029,ok,False,10.0,
+9,windowed,grid,1.0,250.0,notebook,4502.273327886604,ok,True,3009.6521929804976,Covariance of the parameters could not be estimated
+10,windowed,grid,6.444444444444445,25.0,bounded,0.6098600137863537,ok,False,10.0,
+10,windowed,grid,6.444444444444445,25.0,notebook,176.08951868176442,ok,True,2189.884632587043,Covariance of the parameters could not be estimated
+11,windowed,grid,6.444444444444445,50.0,bounded,0.5311233217066264,ok,False,10.0,
+11,windowed,grid,6.444444444444445,50.0,notebook,327.8296686866939,ok,True,1997.8719219274897,Covariance of the parameters could not be estimated
+12,windowed,grid,6.444444444444445,75.00000000000001,bounded,0.5035791277020761,ok,False,10.0,
+12,windowed,grid,6.444444444444445,75.00000000000001,notebook,478.75485080861614,ok,True,1938.7093847974727,Covariance of the parameters could not be estimated
+13,windowed,grid,6.444444444444445,100.0,bounded,0.4933592014487013,ok,False,10.0,
+13,windowed,grid,6.444444444444445,100.0,notebook,625.8591243775109,ok,True,1911.751791408159,Covariance of the parameters could not be estimated
+14,windowed,grid,6.444444444444445,125.0,bounded,0.48600562362886934,ok,False,10.0,
+14,windowed,grid,6.444444444444445,125.0,notebook,765.4692195031992,ok,True,1890.706443104779,Covariance of the parameters could not be estimated
+15,windowed,grid,6.444444444444445,150.0,bounded,0.47949285710104717,ok,False,10.0,
+15,windowed,grid,6.444444444444445,150.0,notebook,895.214254818623,ok,True,1870.869917038595,Covariance of the parameters could not be estimated
+16,windowed,grid,6.444444444444445,175.00000000000003,bounded,0.47367830411483275,ok,False,10.0,
+16,windowed,grid,6.444444444444445,175.00000000000003,notebook,1014.2179952648643,ok,True,1851.7987945824364,Covariance of the parameters could not be estimated
+17,windowed,grid,6.444444444444445,200.0,bounded,0.4675285802908934,ok,False,10.0,
+17,windowed,grid,6.444444444444445,200.0,notebook,1122.600748265955,ok,True,1833.7013164177233,Covariance of the parameters could not be estimated
+18,windowed,grid,6.444444444444445,225.0,bounded,0.4656263432450541,ok,False,10.0,
+18,windowed,grid,6.444444444444445,225.0,notebook,1221.0083094713048,ok,True,1875.475411002594,Covariance of the parameters could not be estimated
+19,windowed,grid,6.444444444444445,250.0,bounded,0.4640143508824398,ok,False,10.0,
+19,windowed,grid,6.444444444444445,250.0,notebook,1310.3081042062227,ok,True,1908.5413585895853,Covariance of the parameters could not be estimated
+20,windowed,grid,11.88888888888889,25.0,bounded,0.3273639834066052,ok,False,10.0,
+20,windowed,grid,11.88888888888889,25.0,notebook,70.48892181961715,ok,True,1361.1205284366526,Covariance of the parameters could not be estimated
+21,windowed,grid,11.88888888888889,50.0,bounded,0.29309073767724303,ok,False,10.0,
+21,windowed,grid,11.88888888888889,50.0,notebook,131.89461605617043,ok,True,1238.9732509162395,Covariance of the parameters could not be estimated
+22,windowed,grid,11.88888888888889,75.00000000000001,bounded,0.27989292193505777,ok,False,10.0,
+22,windowed,grid,11.88888888888889,75.00000000000001,notebook,192.97051182715654,ok,True,1201.3373872781658,Covariance of the parameters could not be estimated
+23,windowed,grid,11.88888888888889,100.0,bounded,0.27517768997715714,ok,False,10.0,
+23,windowed,grid,11.88888888888889,100.0,notebook,252.50017515863735,ok,True,1184.1885495187983,Covariance of the parameters could not be estimated
+24,windowed,grid,11.88888888888889,125.0,bounded,0.2704917809173352,ok,False,10.0,
+24,windowed,grid,11.88888888888889,125.0,notebook,308.99711952929755,ok,True,1170.8007196977387,Covariance of the parameters could not be estimated
+25,windowed,grid,11.88888888888889,150.0,bounded,0.26742878335263315,ok,False,10.0,
+25,windowed,grid,11.88888888888889,150.0,notebook,361.5019046308735,ok,True,1158.1817485877218,Covariance of the parameters could not be estimated
+26,windowed,grid,11.88888888888889,175.00000000000003,bounded,0.26503655812860044,ok,False,10.0,
+26,windowed,grid,11.88888888888889,175.00000000000003,notebook,409.6599386028357,ok,True,1146.049860118203,Covariance of the parameters could not be estimated
+27,windowed,grid,11.88888888888889,200.0,bounded,0.26314367572394376,ok,False,10.0,
+27,windowed,grid,11.88888888888889,200.0,notebook,453.51990704945086,ok,True,1134.5373597689013,Covariance of the parameters could not be estimated
+28,windowed,grid,11.88888888888889,225.0,bounded,0.2615899785191864,ok,False,10.0,
+28,windowed,grid,11.88888888888889,225.0,notebook,493.3431483850124,ok,True,1123.7574497062276,Covariance of the parameters could not be estimated
+29,windowed,grid,11.88888888888889,250.0,bounded,0.2619115483815921,ok,False,10.0,
+29,windowed,grid,11.88888888888889,250.0,notebook,529.4806893766431,ok,True,1113.7540011665778,Covariance of the parameters could not be estimated
+30,windowed,grid,17.333333333333332,25.0,bounded,0.19284568781531347,ok,False,10.0,
+30,windowed,grid,17.333333333333332,25.0,notebook,37.401604105598295,ok,True,986.4203669939352,Covariance of the parameters could not be estimated
+31,windowed,grid,17.333333333333332,50.0,bounded,0.1737532751890113,ok,False,10.0,
+31,windowed,grid,17.333333333333332,50.0,notebook,70.11416696603243,ok,True,897.2671596706952,Covariance of the parameters could not be estimated
+32,windowed,grid,17.333333333333332,75.00000000000001,bounded,0.16673183610580655,ok,False,10.0,
+32,windowed,grid,17.333333333333332,75.00000000000001,notebook,102.65103678740444,ok,True,869.7973884400903,Covariance of the parameters could not be estimated
+33,windowed,grid,17.333333333333332,100.0,bounded,0.16371899065489692,ok,False,10.0,
+33,windowed,grid,17.333333333333332,100.0,notebook,134.3641845337632,ok,True,857.2807873536926,Covariance of the parameters could not be estimated
+34,windowed,grid,17.333333333333332,125.0,bounded,0.16123156940655708,ok,False,10.0,
+34,windowed,grid,17.333333333333332,125.0,notebook,164.46171648296652,ok,True,847.5092090730052,Covariance of the parameters could not be estimated
+35,windowed,grid,17.333333333333332,150.0,bounded,0.1595242697296451,ok,False,10.0,
+35,windowed,grid,17.333333333333332,150.0,notebook,192.43251144690436,ok,True,838.2988387869729,Covariance of the parameters could not be estimated
+36,windowed,grid,17.333333333333332,175.00000000000003,bounded,0.1582750646505421,ok,False,10.0,
+36,windowed,grid,17.333333333333332,175.00000000000003,notebook,218.08766823861694,ok,True,829.4440261292757,Covariance of the parameters could not be estimated
+37,windowed,grid,17.333333333333332,200.0,bounded,0.15740817713771146,ok,False,10.0,
+37,windowed,grid,17.333333333333332,200.0,notebook,241.4531230666233,ok,True,821.041201463449,Covariance of the parameters could not be estimated
+38,windowed,grid,17.333333333333332,225.0,bounded,0.15639759787293106,ok,False,10.0,
+38,windowed,grid,17.333333333333332,225.0,notebook,262.6680983501422,ok,True,813.1731834141069,Covariance of the parameters could not be estimated
+39,windowed,grid,17.333333333333332,250.0,bounded,0.15661452132059342,ok,False,10.0,
+39,windowed,grid,17.333333333333332,250.0,notebook,281.91959604930065,ok,True,805.8718550807141,Covariance of the parameters could not be estimated
+40,windowed,grid,22.77777777777778,25.0,bounded,0.12557152858072237,ok,False,10.0,
+40,windowed,grid,22.77777777777778,25.0,notebook,23.089230529663215,ok,True,773.9698849664579,Covariance of the parameters could not be estimated
+41,windowed,grid,22.77777777777778,50.0,bounded,0.11347757014612889,ok,False,10.0,
+41,windowed,grid,22.77777777777778,50.0,notebook,43.32567327275191,ok,True,703.8491753522973,Covariance of the parameters could not be estimated
+42,windowed,grid,22.77777777777778,75.00000000000001,bounded,0.10919506264938765,ok,False,10.0,
+42,windowed,grid,22.77777777777778,75.00000000000001,notebook,63.45342987771963,ok,True,682.2436487031581,Covariance of the parameters could not be estimated
+43,windowed,grid,22.77777777777778,100.0,bounded,0.10715935480650476,ok,False,10.0,
+43,windowed,grid,22.77777777777778,100.0,notebook,83.07162064162681,ok,True,672.399084024637,Covariance of the parameters could not be estimated
+44,windowed,grid,22.77777777777778,125.0,bounded,0.10559048510389685,ok,False,10.0,
+44,windowed,grid,22.77777777777778,125.0,notebook,101.69036918165642,ok,True,664.7135172859859,Covariance of the parameters could not be estimated
+45,windowed,grid,22.77777777777778,150.0,bounded,0.10455760652186291,ok,False,10.0,
+45,windowed,grid,22.77777777777778,150.0,notebook,118.99348887855471,ok,True,657.4694195827198,Covariance of the parameters could not be estimated
+46,windowed,grid,22.77777777777778,175.00000000000003,bounded,0.1037317016508494,ok,False,10.0,
+46,windowed,grid,22.77777777777778,175.00000000000003,notebook,134.86412285166935,ok,True,650.5049378065348,Covariance of the parameters could not be estimated
+47,windowed,grid,22.77777777777778,200.0,bounded,0.1032993182310912,ok,False,10.0,
+47,windowed,grid,22.77777777777778,200.0,notebook,149.31831559744987,ok,True,643.8959335768512,Covariance of the parameters could not be estimated
+48,windowed,grid,22.77777777777778,225.0,bounded,0.10261810129619497,ok,False,10.0,
+48,windowed,grid,22.77777777777778,225.0,notebook,162.44219202537195,ok,True,637.7075692140489,Covariance of the parameters could not be estimated
+49,windowed,grid,22.77777777777778,250.0,bounded,0.10271955645603138,ok,False,10.0,
+49,windowed,grid,22.77777777777778,250.0,notebook,174.35143412816436,ok,True,631.9649407540973,Covariance of the parameters could not be estimated
+50,windowed,grid,28.222222222222225,25.0,bounded,0.08787835669210473,ok,False,10.0,
+50,windowed,grid,28.222222222222225,25.0,notebook,15.64885509842308,ok,True,637.3173015225074,Covariance of the parameters could not be estimated
+51,windowed,grid,28.222222222222225,50.0,bounded,0.07959386293835889,ok,False,10.0,
+51,windowed,grid,28.222222222222225,50.0,notebook,29.381618003751917,ok,True,579.5531292343215,Covariance of the parameters could not be estimated
+52,windowed,grid,28.222222222222225,75.00000000000001,bounded,0.0766627084430891,ok,False,10.0,
+52,windowed,grid,28.222222222222225,75.00000000000001,notebook,43.04062481544019,ok,True,561.754918714597,Covariance of the parameters could not be estimated
+53,windowed,grid,28.222222222222225,100.0,bounded,0.07528604779801777,ok,False,10.0,
+53,windowed,grid,28.222222222222225,100.0,notebook,56.35383236938446,ok,True,553.6451563039715,Covariance of the parameters could not be estimated
+54,windowed,grid,28.222222222222225,125.0,bounded,0.07418974195208256,ok,False,10.0,
+54,windowed,grid,28.222222222222225,125.0,notebook,68.98880297860818,ok,True,547.3139458530472,Covariance of the parameters could not be estimated
+55,windowed,grid,28.222222222222225,150.0,bounded,0.07346386130680084,ok,False,10.0,
+55,windowed,grid,28.222222222222225,150.0,notebook,80.73096751497086,ok,True,541.3464066104074,Covariance of the parameters could not be estimated
+56,windowed,grid,28.222222222222225,175.00000000000003,bounded,0.07290744061722103,ok,False,10.0,
+56,windowed,grid,28.222222222222225,175.00000000000003,notebook,91.50102509262865,ok,True,535.6091487650174,Covariance of the parameters could not be estimated
+57,windowed,grid,28.222222222222225,200.0,bounded,0.07259616345887394,ok,False,10.0,
+57,windowed,grid,28.222222222222225,200.0,notebook,101.30986375492367,ok,True,530.1647481087463,Covariance of the parameters could not be estimated
+58,windowed,grid,28.222222222222225,225.0,bounded,0.07213688109417979,ok,False,10.0,
+58,windowed,grid,28.222222222222225,225.0,notebook,110.2159291969362,ok,True,525.066906309759,Covariance of the parameters could not be estimated
+59,windowed,grid,28.222222222222225,250.0,bounded,0.07222420085595162,ok,False,10.0,
+59,windowed,grid,28.222222222222225,250.0,notebook,118.29772500740117,ok,True,520.3362351434184,Covariance of the parameters could not be estimated
+60,windowed,grid,33.666666666666664,25.0,bounded,0.06484848862605991,ok,False,10.0,
+60,windowed,grid,33.666666666666664,25.0,notebook,11.297919923995988,ok,True,542.0844017417752,Covariance of the parameters could not be estimated
+61,windowed,grid,33.666666666666664,50.0,bounded,0.058796769064991324,ok,False,10.0,
+61,windowed,grid,33.666666666666664,50.0,notebook,21.220972840352733,ok,True,492.9820556309392,Covariance of the parameters could not be estimated
+62,windowed,grid,33.666666666666664,75.00000000000001,bounded,0.05670793023121346,ok,False,10.0,
+62,windowed,grid,33.666666666666664,75.00000000000001,notebook,31.090730900813067,ok,True,477.8526967191102,Covariance of the parameters could not be estimated
+63,windowed,grid,33.666666666666664,100.0,bounded,0.05564378628523163,ok,False,10.0,
+63,windowed,grid,33.666666666666664,100.0,notebook,40.71062050022984,ok,True,470.95900292542615,Covariance of the parameters could not be estimated
+64,windowed,grid,33.666666666666664,125.0,bounded,0.054860121495808975,ok,False,10.0,
+64,windowed,grid,33.666666666666664,125.0,notebook,49.84042801356629,ok,True,465.57715983589287,Covariance of the parameters could not be estimated
+65,windowed,grid,33.666666666666664,150.0,bounded,0.05436368535464945,ok,False,10.0,
+65,windowed,grid,33.666666666666664,150.0,notebook,58.325109563094884,ok,True,460.50444599737693,Covariance of the parameters could not be estimated
+66,windowed,grid,33.666666666666664,175.00000000000003,bounded,0.053934119675831824,ok,False,10.0,
+66,windowed,grid,33.666666666666664,175.00000000000003,notebook,66.10736372360596,ok,True,455.62752108177995,Covariance of the parameters could not be estimated
+67,windowed,grid,33.666666666666664,200.0,bounded,0.053738534741806364,ok,False,10.0,
+67,windowed,grid,33.666666666666664,200.0,notebook,73.195058003698,ok,True,450.9995387722576,Covariance of the parameters could not be estimated
+68,windowed,grid,33.666666666666664,225.0,bounded,0.05340864876225096,ok,False,10.0,
+68,windowed,grid,33.666666666666664,225.0,notebook,79.6304242345774,ok,True,446.6661227673723,Covariance of the parameters could not be estimated
+69,windowed,grid,33.666666666666664,250.0,bounded,0.05342520016526335,ok,False,10.0,
+69,windowed,grid,33.666666666666664,250.0,notebook,85.47018772858739,ok,True,442.6448071027743,Covariance of the parameters could not be estimated
+70,windowed,grid,39.11111111111111,25.0,bounded,0.04977922601090099,ok,False,10.0,
+70,windowed,grid,39.11111111111111,25.0,notebook,8.536951549242147,ok,True,471.93334546754465,Covariance of the parameters could not be estimated
+71,windowed,grid,39.11111111111111,50.0,bounded,0.045178329605064,ok,False,10.0,
+71,windowed,grid,39.11111111111111,50.0,notebook,16.039643392092216,ok,True,429.2372597618404,Covariance of the parameters could not be estimated
+72,windowed,grid,39.11111111111111,75.00000000000001,bounded,0.04358388942396138,ok,False,10.0,
+72,windowed,grid,39.11111111111111,75.00000000000001,notebook,23.50203968437229,ok,True,416.08180117284473,Covariance of the parameters could not be estimated
+73,windowed,grid,39.11111111111111,100.0,bounded,0.042773136051752925,ok,False,10.0,
+73,windowed,grid,39.11111111111111,100.0,notebook,30.775513668139126,ok,True,410.0874851225278,Covariance of the parameters could not be estimated
+74,windowed,grid,39.11111111111111,125.0,bounded,0.04218539719004052,ok,False,10.0,
+74,windowed,grid,39.11111111111111,125.0,notebook,37.67844293138947,ok,True,405.4078041731683,Covariance of the parameters could not be estimated
+75,windowed,grid,39.11111111111111,150.0,bounded,0.04178379634658227,ok,False,10.0,
+75,windowed,grid,39.11111111111111,150.0,notebook,44.09360080542414,ok,True,400.99690793110136,Covariance of the parameters could not be estimated
+76,windowed,grid,39.11111111111111,175.00000000000003,bounded,0.04148571942451813,ok,False,10.0,
+76,windowed,grid,39.11111111111111,175.00000000000003,notebook,49.97766242448578,ok,True,396.7562473668811,Covariance of the parameters could not be estimated
+77,windowed,grid,39.11111111111111,200.0,bounded,0.04133340066623455,ok,False,10.0,
+77,windowed,grid,39.11111111111111,200.0,notebook,55.336576309970276,ok,True,392.73208174777176,Covariance of the parameters could not be estimated
+78,windowed,grid,39.11111111111111,225.0,bounded,0.04105998433031942,ok,False,10.0,
+78,windowed,grid,39.11111111111111,225.0,notebook,60.202273402705195,ok,True,388.96403098102667,Covariance of the parameters could not be estimated
+79,windowed,grid,39.11111111111111,250.0,bounded,0.041076308484475674,ok,False,10.0,
+79,windowed,grid,39.11111111111111,250.0,notebook,64.61764297696811,ok,True,385.46737057689455,Covariance of the parameters could not be estimated
+80,windowed,grid,44.55555555555556,25.0,bounded,0.03938197723223391,ok,False,10.0,
+80,windowed,grid,44.55555555555556,25.0,notebook,6.676459803712104,ok,True,418.11450264790625,Covariance of the parameters could not be estimated
+81,windowed,grid,44.55555555555556,50.0,bounded,0.035780734408585785,ok,False,10.0,
+81,windowed,grid,44.55555555555556,50.0,notebook,12.546787104027807,ok,True,380.34764851161316,Covariance of the parameters could not be estimated
+82,windowed,grid,44.55555555555556,75.00000000000001,bounded,0.03452160413911183,ok,False,10.0,
+82,windowed,grid,44.55555555555556,75.00000000000001,notebook,18.38558597754057,ok,True,368.7109820106489,Covariance of the parameters could not be estimated
+83,windowed,grid,44.55555555555556,100.0,bounded,0.03389183408236495,ok,False,10.0,
+83,windowed,grid,44.55555555555556,100.0,notebook,24.07656646686089,ok,True,363.4087134031208,Covariance of the parameters could not be estimated
+84,windowed,grid,44.55555555555556,125.0,bounded,0.033434856365877945,ok,False,10.0,
+84,windowed,grid,44.55555555555556,125.0,notebook,29.477621842049164,ok,True,359.2692973063825,Covariance of the parameters could not be estimated
+85,windowed,grid,44.55555555555556,150.0,bounded,0.033105144900561705,ok,False,10.0,
+85,windowed,grid,44.55555555555556,150.0,notebook,34.497030501311826,ok,True,355.3676331930847,Covariance of the parameters could not be estimated
+86,windowed,grid,44.55555555555556,175.00000000000003,bounded,0.03287825530458006,ok,False,10.0,
+86,windowed,grid,44.55555555555556,175.00000000000003,notebook,39.100893792329785,ok,True,351.61655828665914,Covariance of the parameters could not be estimated
+87,windowed,grid,44.55555555555556,200.0,bounded,0.03275054914301994,ok,False,10.0,
+87,windowed,grid,44.55555555555556,200.0,notebook,43.29386601362393,ok,True,348.05697613123823,Covariance of the parameters could not be estimated
+88,windowed,grid,44.55555555555556,225.0,bounded,0.03253721981940564,ok,False,10.0,
+88,windowed,grid,44.55555555555556,225.0,notebook,47.10093087472026,ok,True,344.7239442270271,Covariance of the parameters could not be estimated
+89,windowed,grid,44.55555555555556,250.0,bounded,0.032552896106505524,ok,False,10.0,
+89,windowed,grid,44.55555555555556,250.0,notebook,50.55564620832146,ok,True,341.6309739649021,Covariance of the parameters could not be estimated
+90,windowed,grid,50.0,25.0,bounded,0.03192683446041801,ok,False,10.0,
+90,windowed,grid,50.0,25.0,notebook,5.363710395679978,ok,True,375.5218182088251,Covariance of the parameters could not be estimated
+91,windowed,grid,50.0,50.0,bounded,0.029018965641398255,ok,False,10.0,
+91,windowed,grid,50.0,50.0,notebook,10.081505120620115,ok,True,341.66477880643276,Covariance of the parameters could not be estimated
+92,windowed,grid,50.0,75.00000000000001,bounded,0.028012925969721308,ok,False,10.0,
+92,windowed,grid,50.0,75.00000000000001,notebook,14.773961455033275,ok,True,331.2327874626582,Covariance of the parameters could not be estimated
+93,windowed,grid,50.0,100.0,bounded,0.0275097372789552,ok,False,10.0,
+93,windowed,grid,50.0,100.0,notebook,19.347620871060855,ok,True,326.4794303935824,Covariance of the parameters could not be estimated
+94,windowed,grid,50.0,125.0,bounded,0.027127331568667704,ok,False,10.0,
+94,windowed,grid,50.0,125.0,notebook,23.688276724577314,ok,True,322.7685557260563,Covariance of the parameters could not be estimated
+95,windowed,grid,50.0,150.0,bounded,0.026869624517222176,ok,False,10.0,
+95,windowed,grid,50.0,150.0,notebook,27.72221529112278,ok,True,319.27080748048195,Covariance of the parameters could not be estimated
+96,windowed,grid,50.0,175.00000000000003,bounded,0.026679930848381574,ok,False,10.0,
+96,windowed,grid,50.0,175.00000000000003,notebook,31.422193305558537,ok,True,315.908056335866,Covariance of the parameters could not be estimated
+97,windowed,grid,50.0,200.0,bounded,0.02658328804490108,ok,False,10.0,
+97,windowed,grid,50.0,200.0,notebook,34.79195127908383,ok,True,312.71697706738456,Covariance of the parameters could not be estimated
+98,windowed,grid,50.0,225.0,bounded,0.02641222810678221,ok,False,10.0,
+98,windowed,grid,50.0,225.0,notebook,37.851567821796756,ok,True,309.72899793161963,Covariance of the parameters could not be estimated
+99,windowed,grid,50.0,250.0,bounded,0.026426660269596655,ok,False,10.0,
+99,windowed,grid,50.0,250.0,notebook,40.62801229298613,ok,True,306.9562160728687,Covariance of the parameters could not be estimated
+100,windowed,extreme,3.0,200.0,bounded,0.40690665961287226,ok,False,10.0,
+100,windowed,extreme,3.0,200.0,notebook,2546.6619279351166,ok,True,3089.5156161384757,Covariance of the parameters could not be estimated
+101,biexp,grid,1.0,25.0,bounded,0.00012991095607428363,ok,False,10.0,
+101,biexp,grid,1.0,25.0,notebook,463.898141831466,ok,True,4247.03609130793,Covariance of the parameters could not be estimated
+102,biexp,grid,1.0,50.0,bounded,0.0017245144569702755,ok,False,10.0,
+102,biexp,grid,1.0,50.0,notebook,982.3018625538867,ok,True,4247.149935741101,Covariance of the parameters could not be estimated
+103,biexp,grid,1.0,75.00000000000001,bounded,0.00011703650234474785,ok,False,10.0,
+103,biexp,grid,1.0,75.00000000000001,notebook,1499.9156622570645,ok,True,4247.327372668664,Covariance of the parameters could not be estimated
+104,biexp,grid,1.0,100.0,bounded,0.013107949965671462,ok,False,10.0,
+104,biexp,grid,1.0,100.0,notebook,2005.9343628719114,ok,True,4250.552558939648,Covariance of the parameters could not be estimated
+105,biexp,grid,1.0,125.0,bounded,0.005907278413516434,ok,False,10.0,
+105,biexp,grid,1.0,125.0,notebook,2487.832509907003,ok,True,4243.396072220528,Covariance of the parameters could not be estimated
+106,biexp,grid,1.0,150.0,bounded,0.00411759293864965,ok,False,10.0,
+106,biexp,grid,1.0,150.0,notebook,2937.215499219822,ok,True,4227.943596053744,Covariance of the parameters could not be estimated
+107,biexp,grid,1.0,175.00000000000003,bounded,0.0025016757737312727,ok,False,10.0,
+107,biexp,grid,1.0,175.00000000000003,notebook,3350.6774236944734,ok,True,4269.082169166729,Covariance of the parameters could not be estimated
+108,biexp,grid,1.0,200.0,bounded,0.007551081919256407,ok,False,10.0,
+108,biexp,grid,1.0,200.0,notebook,3728.2610085355554,ok,True,4064.3814792339977,Covariance of the parameters could not be estimated
+109,biexp,grid,1.0,225.0,bounded,0.00018935602010031866,ok,False,10.0,
+109,biexp,grid,1.0,225.0,notebook,4071.895755873882,ok,True,3896.7530225991663,Covariance of the parameters could not be estimated
+110,biexp,grid,1.0,250.0,bounded,0.012774357195690362,ok,False,10.0,
+110,biexp,grid,1.0,250.0,notebook,4384.355087671119,ok,True,3063.467220435684,Covariance of the parameters could not be estimated
+111,biexp,grid,6.444444444444445,25.0,bounded,0.0006179189601471603,ok,False,10.0,
+111,biexp,grid,6.444444444444445,25.0,notebook,273.3404988146271,ok,True,2132.586710162505,Covariance of the parameters could not be estimated
+112,biexp,grid,6.444444444444445,50.0,bounded,0.0006687425760871927,ok,False,10.0,
+112,biexp,grid,6.444444444444445,50.0,notebook,733.8592861324339,ok,True,2000.3714796061606,Covariance of the parameters could not be estimated
+113,biexp,grid,6.444444444444445,75.00000000000001,bounded,0.0013279108133593272,ok,False,10.0,
+113,biexp,grid,6.444444444444445,75.00000000000001,notebook,1225.76617552306,ok,True,1854.5014125840885,Covariance of the parameters could not be estimated
+114,biexp,grid,6.444444444444445,100.0,bounded,0.008856298789619589,ok,False,10.0,
+114,biexp,grid,6.444444444444445,100.0,notebook,1717.2954589250808,ok,True,1826.4792558988977,Covariance of the parameters could not be estimated
+115,biexp,grid,6.444444444444445,125.0,bounded,0.0037283529144338454,ok,False,10.0,
+115,biexp,grid,6.444444444444445,125.0,notebook,2189.8996535902893,ok,True,1855.8672064792172,Covariance of the parameters could not be estimated
+116,biexp,grid,6.444444444444445,150.0,bounded,0.00258510276206068,ok,False,10.0,
+116,biexp,grid,6.444444444444445,150.0,notebook,2632.815898023919,ok,True,1963.5161836738932,Covariance of the parameters could not be estimated
+117,biexp,grid,6.444444444444445,175.00000000000003,bounded,0.0017426237416556941,ok,False,10.0,
+117,biexp,grid,6.444444444444445,175.00000000000003,notebook,3041.5189846137373,ok,True,2043.5074366642846,Covariance of the parameters could not be estimated
+118,biexp,grid,6.444444444444445,200.0,bounded,0.00576977545869852,ok,False,10.0,
+118,biexp,grid,6.444444444444445,200.0,notebook,3415.4541343502938,ok,True,2118.3475767148607,Covariance of the parameters could not be estimated
+119,biexp,grid,6.444444444444445,225.0,bounded,0.0013758402462179225,ok,False,10.0,
+119,biexp,grid,6.444444444444445,225.0,notebook,3756.2028890196234,ok,True,2199.687436336538,Covariance of the parameters could not be estimated
+120,biexp,grid,6.444444444444445,250.0,bounded,0.009188606527962278,ok,False,10.0,
+120,biexp,grid,6.444444444444445,250.0,notebook,4066.3223194302964,ok,True,2217.1553413429174,Covariance of the parameters could not be estimated
+121,biexp,grid,11.88888888888889,25.0,bounded,1.6010524816673617e-05,ok,False,10.0,
+121,biexp,grid,11.88888888888889,25.0,notebook,180.984837198702,ok,True,1304.4523908410101,Covariance of the parameters could not be estimated
+122,biexp,grid,11.88888888888889,50.0,bounded,0.0014473822033156695,ok,False,10.0,
+122,biexp,grid,11.88888888888889,50.0,notebook,570.5026688549046,ok,True,1035.1734804357966,Covariance of the parameters could not be estimated
+123,biexp,grid,11.88888888888889,75.00000000000001,bounded,6.7918405271182e-05,ok,False,10.0,
+123,biexp,grid,11.88888888888889,75.00000000000001,notebook,1021.8711715223677,ok,True,800.473096953958,Covariance of the parameters could not be estimated
+124,biexp,grid,11.88888888888889,100.0,bounded,0.005879015268816785,ok,False,10.0,
+124,biexp,grid,11.88888888888889,100.0,notebook,1487.7389533319706,ok,True,753.0281766292845,Covariance of the parameters could not be estimated
+125,biexp,grid,11.88888888888889,125.0,bounded,0.005379386170401336,ok,False,10.0,
+125,biexp,grid,11.88888888888889,125.0,notebook,1942.7321931443435,ok,True,800.880185057735,Covariance of the parameters could not be estimated
+126,biexp,grid,11.88888888888889,150.0,bounded,0.004193003471080484,ok,False,10.0,
+126,biexp,grid,11.88888888888889,150.0,notebook,2372.8383657716045,ok,True,845.639571179922,Covariance of the parameters could not be estimated
+127,biexp,grid,11.88888888888889,175.00000000000003,bounded,0.0026991246128794657,ok,False,10.0,
+127,biexp,grid,11.88888888888889,175.00000000000003,notebook,2771.813339535438,ok,True,962.5224394822902,Covariance of the parameters could not be estimated
+128,biexp,grid,11.88888888888889,200.0,bounded,0.004861268083395086,ok,False,10.0,
+128,biexp,grid,11.88888888888889,200.0,notebook,3138.1131260276247,ok,True,1038.9282264702929,Covariance of the parameters could not be estimated
+129,biexp,grid,11.88888888888889,225.0,bounded,0.00038443038236805015,ok,False,10.0,
+129,biexp,grid,11.88888888888889,225.0,notebook,3472.7112126422517,ok,True,1108.2168108114797,Covariance of the parameters could not be estimated
+130,biexp,grid,11.88888888888889,250.0,bounded,0.008657620022825283,ok,False,10.0,
+130,biexp,grid,11.88888888888889,250.0,notebook,3777.7708384346897,ok,True,1191.7086863022237,Covariance of the parameters could not be estimated
+131,biexp,grid,17.333333333333332,25.0,bounded,0.00010381184319347577,ok,False,10.0,
+131,biexp,grid,17.333333333333332,25.0,notebook,128.92749118235622,ok,True,856.8732416464233,Covariance of the parameters could not be estimated
+132,biexp,grid,17.333333333333332,50.0,bounded,0.0005343012973901519,ok,False,10.0,
+132,biexp,grid,17.333333333333332,50.0,notebook,456.91980047720597,ok,True,479.870697462922,Covariance of the parameters could not be estimated
+133,biexp,grid,17.333333333333332,75.00000000000001,bounded,0.0001629993295334136,ok,False,10.0,
+133,biexp,grid,17.333333333333332,75.00000000000001,notebook,865.7404347647182,ok,True,381.3695422271783,Covariance of the parameters could not be estimated
+134,biexp,grid,17.333333333333332,100.0,bounded,0.005291039883703746,ok,False,10.0,
+134,biexp,grid,17.333333333333332,100.0,notebook,1301.871221676408,ok,True,337.0498386239395,Covariance of the parameters could not be estimated
+135,biexp,grid,17.333333333333332,125.0,bounded,0.003110129181621234,ok,False,10.0,
+135,biexp,grid,17.333333333333332,125.0,notebook,1735.1789076971324,ok,True,302.1533999829791,Covariance of the parameters could not be estimated
+136,biexp,grid,17.333333333333332,150.0,bounded,0.0019159338150058253,ok,False,10.0,
+136,biexp,grid,17.333333333333332,150.0,notebook,2148.848553267773,ok,True,268.59143339544636,Covariance of the parameters could not be estimated
+137,biexp,grid,17.333333333333332,175.00000000000003,bounded,0.0009768812165700138,ok,False,10.0,
+137,biexp,grid,17.333333333333332,175.00000000000003,notebook,2534.9643255243927,ok,True,365.62376234651947,Covariance of the parameters could not be estimated
+138,biexp,grid,17.333333333333332,200.0,bounded,0.007081077477446432,ok,False,10.0,
+138,biexp,grid,17.333333333333332,200.0,notebook,2890.9410672234776,ok,True,480.07036940791414,Covariance of the parameters could not be estimated
+139,biexp,grid,17.333333333333332,225.0,bounded,9.382221832193259e-05,ok,False,10.0,
+139,biexp,grid,17.333333333333332,225.0,notebook,3217.0750877578857,ok,True,553.2554490009802,Covariance of the parameters could not be estimated
+140,biexp,grid,17.333333333333332,250.0,bounded,0.007901017757809933,ok,False,10.0,
+140,biexp,grid,17.333333333333332,250.0,notebook,3515.071948079748,ok,True,617.0159464923296,Covariance of the parameters could not be estimated
+141,biexp,grid,22.77777777777778,25.0,bounded,0.000589687170898836,ok,False,10.0,
+141,biexp,grid,22.77777777777778,25.0,notebook,96.6056683764219,ok,True,564.56505667538,Covariance of the parameters could not be estimated
+142,biexp,grid,22.77777777777778,50.0,bounded,0.00042487285330022797,ok,False,10.0,
+142,biexp,grid,22.77777777777778,50.0,notebook,374.552797598507,ok,True,271.6923539715559,Covariance of the parameters could not be estimated
+143,biexp,grid,22.77777777777778,75.00000000000001,bounded,0.0005281889448186976,ok,False,10.0,
+143,biexp,grid,22.77777777777778,75.00000000000001,notebook,227.81103417945917,ok,True,-14341.13803834485,Covariance of the parameters could not be estimated
+144,biexp,grid,22.77777777777778,100.0,bounded,0.002470541238364625,ok,False,10.0,
+144,biexp,grid,22.77777777777778,100.0,notebook,239.00623651960805,ok,True,-9787.906653109416,Covariance of the parameters could not be estimated
+145,biexp,grid,22.77777777777778,125.0,bounded,0.002083374026252365,ok,False,10.0,
+145,biexp,grid,22.77777777777778,125.0,notebook,231.76553247883,ok,True,-10731.776519594547,Covariance of the parameters could not be estimated
+146,biexp,grid,22.77777777777778,150.0,bounded,0.00300765393386456,ok,False,10.0,
+146,biexp,grid,22.77777777777778,150.0,notebook,219.21359105195043,ok,True,-16376.258035538904,Covariance of the parameters could not be estimated
+147,biexp,grid,22.77777777777778,175.00000000000003,bounded,0.004343964967904946,ok,False,10.0,
+147,biexp,grid,22.77777777777778,175.00000000000003,notebook,2325.727707482622,ok,True,4522.120474903671,Covariance of the parameters could not be estimated
+148,biexp,grid,22.77777777777778,200.0,bounded,0.00195003465567928,ok,False,10.0,
+148,biexp,grid,22.77777777777778,200.0,notebook,2669.617512312261,ok,True,3630.744132215866,Covariance of the parameters could not be estimated
+149,biexp,grid,22.77777777777778,225.0,bounded,0.0024820923190383183,ok,False,10.0,
+149,biexp,grid,22.77777777777778,225.0,notebook,2985.6777276777943,ok,True,268.830339257794,Covariance of the parameters could not be estimated
+150,biexp,grid,22.77777777777778,250.0,bounded,0.00386132710316379,ok,False,10.0,
+150,biexp,grid,22.77777777777778,250.0,notebook,3275.156150806156,ok,True,336.1273485042463,Covariance of the parameters could not be estimated
+151,biexp,grid,28.222222222222225,25.0,bounded,0.009760032481968285,ok,False,10.0,
+151,biexp,grid,28.222222222222225,25.0,notebook,75.1286005792498,ok,True,430.23423143501174,Covariance of the parameters could not be estimated
+152,biexp,grid,28.222222222222225,50.0,bounded,8.146515899026272e-05,ok,False,10.0,
+152,biexp,grid,28.222222222222225,50.0,notebook,312.8228505364346,ok,True,889.8847419200808,Covariance of the parameters could not be estimated
+153,biexp,grid,28.222222222222225,75.00000000000001,bounded,0.0015454364324922678,ok,False,10.0,
+153,biexp,grid,28.222222222222225,75.00000000000001,notebook,185.767362279358,ok,True,-9202.948171155193,Covariance of the parameters could not be estimated
+154,biexp,grid,28.222222222222225,100.0,bounded,0.0026644560223671406,ok,False,10.0,
+154,biexp,grid,28.222222222222225,100.0,notebook,196.65233897537956,ok,True,-5195.232326599253,Covariance of the parameters could not be estimated
+155,biexp,grid,28.222222222222225,125.0,bounded,0.0008073247629363785,ok,False,10.0,
+155,biexp,grid,28.222222222222225,125.0,notebook,192.5417036569075,ok,True,-5783.041169013338,Covariance of the parameters could not be estimated
+156,biexp,grid,28.222222222222225,150.0,bounded,0.0008463354847118643,ok,False,10.0,
+156,biexp,grid,28.222222222222225,150.0,notebook,184.54566897917675,ok,True,-7976.960591070293,Covariance of the parameters could not be estimated
+157,biexp,grid,28.222222222222225,175.00000000000003,bounded,0.0012964308264305868,ok,False,10.0,
+157,biexp,grid,28.222222222222225,175.00000000000003,notebook,177.23523231944876,ok,True,-12292.24214292948,Covariance of the parameters could not be estimated
+158,biexp,grid,28.222222222222225,200.0,bounded,0.001553700550035315,ok,False,10.0,
+158,biexp,grid,28.222222222222225,200.0,notebook,172.06931625505254,ok,True,-12933.51922703003,Covariance of the parameters could not be estimated
+159,biexp,grid,28.222222222222225,225.0,bounded,0.004025983369166309,ok,False,10.0,
+159,biexp,grid,28.222222222222225,225.0,notebook,169.2301659676921,ok,True,-12785.00075826741,Covariance of the parameters could not be estimated
+160,biexp,grid,28.222222222222225,250.0,bounded,0.002206069896033315,ok,False,10.0,
+160,biexp,grid,28.222222222222225,250.0,notebook,168.44354102639917,ok,True,-8080.580179442548,Covariance of the parameters could not be estimated
+161,biexp,grid,33.666666666666664,25.0,bounded,0.006175999162290757,ok,False,10.0,
+161,biexp,grid,33.666666666666664,25.0,notebook,60.11873553792486,ok,True,342.2390886463653,Covariance of the parameters could not be estimated
+162,biexp,grid,33.666666666666664,50.0,bounded,0.0005327365502850943,ok,False,10.0,
+162,biexp,grid,33.666666666666664,50.0,notebook,265.31405143461376,ok,True,2281.402319017533,Covariance of the parameters could not be estimated
+163,biexp,grid,33.666666666666664,75.00000000000001,bounded,0.018424897280609476,ok,False,10.0,
+163,biexp,grid,33.666666666666664,75.00000000000001,notebook,1.6756517274621557e-29,ok,False,10.0,
+164,biexp,grid,33.666666666666664,100.0,bounded,0.001303370524513957,ok,False,10.0,
+164,biexp,grid,33.666666666666664,100.0,notebook,163.77253552155057,ok,True,-2530.2261066408137,Covariance of the parameters could not be estimated
+165,biexp,grid,33.666666666666664,125.0,bounded,0.0032715198052480987,ok,False,10.0,
+165,biexp,grid,33.666666666666664,125.0,notebook,161.78748353778224,ok,True,-2744.687993915659,Covariance of the parameters could not be estimated
+166,biexp,grid,33.666666666666664,150.0,bounded,0.0028653845513271947,ok,False,10.0,
+166,biexp,grid,33.666666666666664,150.0,notebook,157.2179122171654,ok,True,-4536.933339903108,Covariance of the parameters could not be estimated
+167,biexp,grid,33.666666666666664,175.00000000000003,bounded,0.0018611428231796597,ok,False,10.0,
+167,biexp,grid,33.666666666666664,175.00000000000003,notebook,153.80113383916736,ok,True,-10269.655063767279,Covariance of the parameters could not be estimated
+168,biexp,grid,33.666666666666664,200.0,bounded,0.003217437366068812,ok,False,10.0,
+168,biexp,grid,33.666666666666664,200.0,notebook,2291.0071724967547,ok,True,2847.6983129162395,Covariance of the parameters could not be estimated
+169,biexp,grid,33.666666666666664,225.0,bounded,0.00022391560108561467,ok,False,10.0,
+169,biexp,grid,33.666666666666664,225.0,notebook,153.5676293844122,ok,True,-12437.728644535044,Covariance of the parameters could not be estimated
+170,biexp,grid,33.666666666666664,250.0,bounded,0.0052623655195670966,ok,False,10.0,
+170,biexp,grid,33.666666666666664,250.0,notebook,156.3814022097731,ok,True,-6328.113940446439,Covariance of the parameters could not be estimated
+171,biexp,grid,39.11111111111111,25.0,bounded,0.003922493334446619,ok,False,10.0,
+171,biexp,grid,39.11111111111111,25.0,notebook,49.209987303525146,ok,True,281.2876192366586,Covariance of the parameters could not be estimated
+172,biexp,grid,39.11111111111111,50.0,bounded,0.010010099722090302,ok,False,10.0,
+172,biexp,grid,39.11111111111111,50.0,notebook,227.93984148745304,ok,True,1699.26440339264,Covariance of the parameters could not be estimated
+173,biexp,grid,39.11111111111111,75.00000000000001,bounded,0.0031765448849269727,ok,False,10.0,
+173,biexp,grid,39.11111111111111,75.00000000000001,notebook,1.8376724826682956e-29,ok,False,10.0,
+174,biexp,grid,39.11111111111111,100.0,bounded,0.0023387660760802653,ok,False,10.0,
+174,biexp,grid,39.11111111111111,100.0,notebook,137.9403098667109,ok,True,-1552.121011364226,Covariance of the parameters could not be estimated
+175,biexp,grid,39.11111111111111,125.0,bounded,0.0008157223916767607,ok,False,10.0,
+175,biexp,grid,39.11111111111111,125.0,notebook,137.4627598726886,ok,True,-939.7162050462857,Covariance of the parameters could not be estimated
+176,biexp,grid,39.11111111111111,150.0,bounded,0.00033673917562365105,ok,False,10.0,
+176,biexp,grid,39.11111111111111,150.0,notebook,135.53113315682052,ok,True,-2959.4825614875235,Covariance of the parameters could not be estimated
+177,biexp,grid,39.11111111111111,175.00000000000003,bounded,0.00019174124503609771,ok,False,10.0,
+177,biexp,grid,39.11111111111111,175.00000000000003,notebook,135.18461171365658,ok,True,-7335.537488951367,Covariance of the parameters could not be estimated
+178,biexp,grid,39.11111111111111,200.0,bounded,0.0022267490033604813,ok,False,10.0,
+178,biexp,grid,39.11111111111111,200.0,notebook,137.12484050878206,ok,True,-8825.941155926384,Covariance of the parameters could not be estimated
+179,biexp,grid,39.11111111111111,225.0,bounded,0.0012622401726211725,ok,False,10.0,
+179,biexp,grid,39.11111111111111,225.0,notebook,141.1721843802504,ok,True,-7378.892665836525,Covariance of the parameters could not be estimated
+180,biexp,grid,39.11111111111111,250.0,bounded,0.0020653848855313657,ok,False,10.0,
+180,biexp,grid,39.11111111111111,250.0,notebook,55.789933516906906,ok,True,13.022365870853507,Covariance of the parameters could not be estimated
+181,biexp,grid,44.55555555555556,25.0,bounded,0.0024728884777356036,ok,False,10.0,
+181,biexp,grid,44.55555555555556,25.0,notebook,27.005900379209248,ok,True,-22862.727301093524,Covariance of the parameters could not be estimated
+182,biexp,grid,44.55555555555556,50.0,bounded,0.004994070268279908,ok,False,10.0,
+182,biexp,grid,44.55555555555556,50.0,notebook,26.415068806069147,ok,False,-185.45449915128899,Covariance of the parameters could not be estimated
+183,biexp,grid,44.55555555555556,75.00000000000001,bounded,0.003148700381989269,ok,False,10.0,
+183,biexp,grid,44.55555555555556,75.00000000000001,notebook,1.6213213641517886e-29,ok,False,10.0,
+184,biexp,grid,44.55555555555556,100.0,bounded,0.0016724810825771343,ok,False,10.0,
+184,biexp,grid,44.55555555555556,100.0,notebook,2.238821323928154e-29,ok,False,10.0,
+185,biexp,grid,44.55555555555556,125.0,bounded,0.007389955708217066,ok,False,10.0,
+185,biexp,grid,44.55555555555556,125.0,notebook,118.04726228888205,ok,True,-744.5272805425222,Covariance of the parameters could not be estimated
+186,biexp,grid,44.55555555555556,150.0,bounded,0.0016074823168074162,ok,False,10.0,
+186,biexp,grid,44.55555555555556,150.0,notebook,118.18261299904185,ok,True,-1586.89141740843,Covariance of the parameters could not be estimated
+187,biexp,grid,44.55555555555556,175.00000000000003,bounded,0.0008817768524174344,ok,False,10.0,
+187,biexp,grid,44.55555555555556,175.00000000000003,notebook,120.27695948725649,ok,True,-6125.628388587859,Covariance of the parameters could not be estimated
+188,biexp,grid,44.55555555555556,200.0,bounded,0.002170746840467541,ok,False,10.0,
+188,biexp,grid,44.55555555555556,200.0,notebook,124.73908000936929,ok,True,-6214.574001732616,Covariance of the parameters could not be estimated
+189,biexp,grid,44.55555555555556,225.0,bounded,4.801329655343487e-06,ok,False,10.0,
+189,biexp,grid,44.55555555555556,225.0,notebook,2249.6247210733823,ok,True,3505.1748117877464,Covariance of the parameters could not be estimated
+190,biexp,grid,44.55555555555556,250.0,bounded,0.005236780195487548,ok,False,10.0,
+190,biexp,grid,44.55555555555556,250.0,notebook,44.05778339986699,ok,True,13.229164708333588,Covariance of the parameters could not be estimated
+191,biexp,grid,50.0,25.0,bounded,0.0016102787431986475,ok,False,10.0,
+191,biexp,grid,50.0,25.0,notebook,34.73669347589693,ok,True,222.23153985445785,Covariance of the parameters could not be estimated
+192,biexp,grid,50.0,50.0,bounded,0.004349581656990821,ok,False,10.0,
+192,biexp,grid,50.0,50.0,notebook,6.060843893565203e-30,ok,False,10.0,
+193,biexp,grid,50.0,75.00000000000001,bounded,0.0018258440245627688,ok,False,10.0,
+193,biexp,grid,50.0,75.00000000000001,notebook,93.58831273862276,ok,True,-739.7820249880132,Covariance of the parameters could not be estimated
+194,biexp,grid,50.0,100.0,bounded,0.0004952844949293065,ok,False,10.0,
+194,biexp,grid,50.0,100.0,notebook,2.137339282410676e-29,ok,False,10.0,
+195,biexp,grid,50.0,125.0,bounded,0.001153715404065017,ok,False,10.0,
+195,biexp,grid,50.0,125.0,notebook,102.40247525984908,ok,True,-502.372443259295,Covariance of the parameters could not be estimated
+196,biexp,grid,50.0,150.0,bounded,0.001985815951474244,ok,False,10.0,
+196,biexp,grid,50.0,150.0,notebook,104.17622761188382,ok,True,-1117.57396746014,Covariance of the parameters could not be estimated
+197,biexp,grid,50.0,175.00000000000003,bounded,0.002532188194131753,ok,False,10.0,
+197,biexp,grid,50.0,175.00000000000003,notebook,108.21806975593236,ok,True,-6214.57740154843,Covariance of the parameters could not be estimated
+198,biexp,grid,50.0,200.0,bounded,0.00121947105561657,ok,False,10.0,
+198,biexp,grid,50.0,200.0,notebook,1846.8830863758328,ok,True,3462.192916995832,Covariance of the parameters could not be estimated
+199,biexp,grid,50.0,225.0,bounded,0.0007211780868574461,ok,False,10.0,
+199,biexp,grid,50.0,225.0,notebook,2103.3998733671183,ok,True,4170.728065705428,Covariance of the parameters could not be estimated
+200,biexp,grid,50.0,250.0,bounded,0.21369750983348912,ok,False,10.0,
+200,biexp,grid,50.0,250.0,notebook,34.984018572666855,ok,True,13.375164143237466,Covariance of the parameters could not be estimated
+201,biexp,extreme,3.0,200.0,bounded,0.006646022851590129,ok,False,10.0,
+201,biexp,extreme,3.0,200.0,notebook,3608.8477607125587,ok,True,3314.4916445499034,Covariance of the parameters could not be estimated

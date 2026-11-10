@@ -1,0 +1,196 @@
+{
+  "reference": {
+    "rise_amplitude": -94.1371963431018,
+    "rise_tau_ms": 2.9945081700695497,
+    "decay_tau_ms": 219.69249722514368,
+    "extrapolated_rise_peak": -76.41124089428648
+  },
+  "plugin": [
+    {
+      "refinements": 3,
+      "mse": 3.123696093880321,
+      "output_difference_mse": 0.010541810494975304,
+      "max_abs_difference": 0.1313198868528751,
+      "diagnostics": {
+        "config": {
+          "mode": "windowed",
+          "onset_s": 0.01,
+          "peak_s": 0.015,
+          "peak_search_end_s": 0.1,
+          "end_s": null,
+          "rise_model": "singlerise",
+          "decay_model": "singledecay",
+          "global_model": "biexp",
+          "rise_degree": 3,
+          "decay_degree": 3,
+          "pre_degree": null,
+          "constrain_rise": true,
+          "constrain_decay": true,
+          "fit_offset": false,
+          "tau_min_s": 0.0005,
+          "tau_max_s": 1.0,
+          "grid_size": 21,
+          "refinements": 3,
+          "channels": null
+        },
+        "fits": [
+          {
+            "epoch": 0,
+            "channel": 0,
+            "rise": {
+              "model": "singlerise",
+              "tau_s": [
+                0.0029876062215676035
+              ],
+              "coefficients": [
+                -94.01921509916188
+              ],
+              "residual_mse": 0.009035015875611672,
+              "anchor": 0.0,
+              "scale_s": 0.0049,
+              "tau_at_bound": false
+            },
+            "decay": {
+              "model": "singledecay",
+              "tau_s": [
+                0.2186724147886557
+              ],
+              "coefficients": [
+                -76.69995520332085
+              ],
+              "residual_mse": 3.7382212676957227,
+              "anchor": -76.69995520332085,
+              "scale_s": 0.2349,
+              "tau_at_bound": false
+            },
+            "peak_s": 0.015
+          }
+        ]
+      }
+    },
+    {
+      "refinements": 5,
+      "mse": 3.113653679778382,
+      "output_difference_mse": 1.1474929272210073e-06,
+      "max_abs_difference": 0.008356567569066442,
+      "diagnostics": {
+        "config": {
+          "mode": "windowed",
+          "onset_s": 0.01,
+          "peak_s": 0.015,
+          "peak_search_end_s": 0.1,
+          "end_s": null,
+          "rise_model": "singlerise",
+          "decay_model": "singledecay",
+          "global_model": "biexp",
+          "rise_degree": 3,
+          "decay_degree": 3,
+          "pre_degree": null,
+          "constrain_rise": true,
+          "constrain_decay": true,
+          "fit_offset": false,
+          "tau_min_s": 0.0005,
+          "tau_max_s": 1.0,
+          "grid_size": 21,
+          "refinements": 5,
+          "channels": null
+        },
+        "fits": [
+          {
+            "epoch": 0,
+            "channel": 0,
+            "rise": {
+              "model": "singlerise",
+              "tau_s": [
+                0.002992282408906532
+              ],
+              "coefficients": [
+                -94.09914634141141
+              ],
+              "residual_mse": 0.008848785089307871,
+              "anchor": 0.0,
+              "scale_s": 0.0049,
+              "tau_at_bound": false
+            },
+            "decay": {
+              "model": "singledecay",
+              "tau_s": [
+                0.21970081789664855
+              ],
+              "coefficients": [
+                -76.69995520332085
+              ],
+              "residual_mse": 3.727322244989008,
+              "anchor": -76.69995520332085,
+              "scale_s": 0.2349,
+              "tau_at_bound": false
+            },
+            "peak_s": 0.015
+          }
+        ]
+      }
+    },
+    {
+      "refinements": 7,
+      "mse": 3.113650974705562,
+      "output_difference_mse": 6.987629037979088e-07,
+      "max_abs_difference": 0.0010686501606151921,
+      "diagnostics": {
+        "config": {
+          "mode": "windowed",
+          "onset_s": 0.01,
+          "peak_s": 0.015,
+          "peak_search_end_s": 0.1,
+          "end_s": null,
+          "rise_model": "singlerise",
+          "decay_model": "singledecay",
+          "global_model": "biexp",
+          "rise_degree": 3,
+          "decay_degree": 3,
+          "pre_degree": null,
+          "constrain_rise": true,
+          "constrain_decay": true,
+          "fit_offset": false,
+          "tau_min_s": 0.0005,
+          "tau_max_s": 1.0,
+          "grid_size": 21,
+          "refinements": 7,
+          "channels": null
+        },
+        "fits": [
+          {
+            "epoch": 0,
+            "channel": 0,
+            "rise": {
+              "model": "singlerise",
+              "tau_s": [
+                0.002994363063065661
+              ],
+              "coefficients": [
+                -94.13471561011221
+              ],
+              "residual_mse": 0.00882732401208697,
+              "anchor": 0.0,
+              "scale_s": 0.0049,
+              "tau_at_bound": false
+            },
+            "decay": {
+              "model": "singledecay",
+              "tau_s": [
+                0.21970081789664855
+              ],
+              "coefficients": [
+                -76.69995520332085
+              ],
+              "residual_mse": 3.727322244989008,
+              "anchor": -76.69995520332085,
+              "scale_s": 0.2349,
+              "tau_at_bound": false
+            },
+            "peak_s": 0.015
+          }
+        ]
+      }
+    }
+  ]
+}

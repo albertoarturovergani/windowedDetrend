@@ -1,0 +1,6 @@
+{
+  "refinements": 5,
+  "python_mse": 3.1136536797783863,
+  "matlab_mse": 3.1136536797783876,
+  "max_abs_difference": 1.4210854715202004e-14
+}

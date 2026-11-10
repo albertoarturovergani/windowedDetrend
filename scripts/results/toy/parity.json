@@ -1,0 +1,11 @@
+{
+  "models": [
+    "lagrange",
+    "poly"
+  ],
+  "decay_degree": 3,
+  "max_absolute_difference": 4.618527782440651e-14,
+  "passed": true,
+  "mse_python": 1.3807390424621833,
+  "mse_matlab": 1.3807390424621822
+}
