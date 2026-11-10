@@ -85,6 +85,10 @@ cfg.refinements = 5;
 
 The core requires no additional MATLAB toolbox. The demonstration source was tested with MATLAB R2023b. Run the Live Script to generate its inline outputs. Neither PyPI nor MATLAB File Exchange installation is required.
 
+## Outputs and fitted parameters
+
+The functions return the corrected signal, estimated trend, and per-epoch/channel diagnostics. Exponential fits expose fitted taus, amplitudes and optional offsets; polynomial fits expose coefficients in normalized local time; Lagrange returns its interpolation nodes. See [Outputs, parameter interpretation and Python/MATLAB examples](scripts/OUTPUTS.md) for field names, units, saving results, and the distinction between fit residual and neural-recovery MSE.
+
 ## Parameters and evaluation
 
 The default onset is 10 ms, the peak is detected automatically within the search interval, and correction extends to the epoch end. Inspect and adjust these settings for your data. Five search refinements apply to optional exponential fits; polynomial fits do not use this setting.

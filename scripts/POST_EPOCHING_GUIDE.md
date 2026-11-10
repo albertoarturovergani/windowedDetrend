@@ -561,3 +561,8 @@ save(fullfile(results,'matlab_toy.mat'),'times','data','neural','corrected','tre
 ## Changing the model
 
 For separate exponential rise/decay fits, use `rise_model='singlerise'`, `decay_model='singledecay'`, and `constrain_rise=True` (Python) / `true` (MATLAB). `tau_min_s` and `tau_max_s` set positive search bounds, not the known artifact time constants. These are different from the toy's generating τ values. With `peak_s=None` / `[]`, the plugin estimates a separate peak for each trace by the maximum absolute amplitude within its search interval; inspect these estimates because neural activity can affect the selected peak. See the plugin README and diagnostics for the complete configuration.
+
+## Returned outputs and fitted parameters
+
+See [Outputs and fitted parameters](OUTPUTS.md) for the complete diagnostic fields, exponential taus and amplitudes, normalized polynomial coefficients, Lagrange nodes, Python/MATLAB inspection examples and result export. Fit residual MSE is distinct from recovery MSE against a known clean signal.
+
