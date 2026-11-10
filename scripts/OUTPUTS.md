@@ -130,6 +130,7 @@ To inspect separate exponential rise/decay fits, rerun with the alternative conf
 
 ```python
 from dataclasses import replace
+import numpy as np
 exp_cfg = replace(cfg, rise_model="singlerise", decay_model="singledecay")
 corrected_exp, trend_exp, diag_exp = detrend(data, times, exp_cfg)
 for rec in diag_exp["fits"]:

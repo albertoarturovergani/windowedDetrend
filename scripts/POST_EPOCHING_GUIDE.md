@@ -565,4 +565,3 @@ For separate exponential rise/decay fits, use `rise_model='singlerise'`, `decay_
 ## Returned outputs and fitted parameters
 
 See [Outputs and fitted parameters](OUTPUTS.md) for the complete diagnostic fields, exponential taus and amplitudes, normalized polynomial coefficients, Lagrange nodes, Python/MATLAB inspection examples and result export. Fit residual MSE is distinct from recovery MSE against a known clean signal.
-
