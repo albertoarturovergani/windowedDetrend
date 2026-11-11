@@ -1,0 +1,14 @@
+{
+  "cases": 214,
+  "channels": 64,
+  "samples": 2500,
+  "traces": 13696,
+  "reconstructed_traces": 68480,
+  "max_absolute_difference": 6.156852805361268e-12,
+  "tolerance": 1e-06,
+  "passed": true,
+  "native_matlab_batches": 12,
+  "coverage": "Every case/channel/method exactly once; all 2500 samples compared",
+  "wall_seconds": 441.6720000000205,
+  "matlab_version": "23.2.0.2485118 (R2023b) Update 6"
+}

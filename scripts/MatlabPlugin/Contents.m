@@ -8,5 +8,6 @@
 % Validation and packaging
 %   tmspath_synthetic  - Damped oscillator and capacitive artifact generator.
 %   run_benchmark      - Native grid or shared Python/MATLAB comparison.
+%   run_scalp_benchmark - Shared 64-channel scalp benchmark, five methods.
 %   test_plugin        - Core and adapter checks.
 %   build_toolbox      - Build a local .mltbx installer.

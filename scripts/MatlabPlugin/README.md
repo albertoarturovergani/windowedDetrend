@@ -59,6 +59,29 @@ figures and numerical output are also available in `demo_results`.
 
 ## Native benchmark and cross-language validation
 
+For the **214-epoch, 64-channel, 2,500-sample scalp dataset**, first generate
+the shared fixtures with `PythonPlugin/run_scalp_benchmark.py`.
+
+The waveform fixtures and complete reconstructed arrays are excluded from Git
+and must be generated locally after cloning. Source code, figures, CSV/JSON
+metrics and the compact `matlab_metrics.mat` summary are versioned.
+
+Then run:
+
+```matlab
+run_scalp_benchmark('../results/scalp64', '../results/scalp64/matlab')
+```
+
+MATLAB processes all 64 distinct channels with the current Lagrange/cubic
+default and four comparator methods, checking **68,480 reconstructed channel
+traces** against Python. Recovery and agreement metrics are written per
+case/channel/method. Inputs, including noise realizations, and configurations
+are shared exactly. The data use BioSemi 64 labels and idealized positions;
+the spatial signal model is illustrative, not a physiological head model.
+See [the full dataset description](../SCALP64_BENCHMARK.md).
+
+The earlier single-channel benchmark remains available:
+
 ```matlab
 test_plugin
 run_benchmark % Generates native noiseless 10x10 grids for two artifact families

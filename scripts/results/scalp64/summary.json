@@ -1,0 +1,48 @@
+{
+  "seed": 42,
+  "grid_size": 10,
+  "cases": 214,
+  "channels": 64,
+  "samples": 2500,
+  "dataset_shape": [
+    214,
+    64,
+    2500
+  ],
+  "sampling_hz": 10000,
+  "epoch_s": [
+    0.0,
+    0.2499
+  ],
+  "evaluation_window_s": [
+    0.01,
+    0.2499
+  ],
+  "traces": 13696,
+  "reconstructed_traces": 68480,
+  "methods": [
+    "default_lagrange3",
+    "window_exp",
+    "window_poly3",
+    "window_poly5",
+    "global_biexp"
+  ],
+  "amplitude_unit": "a.u.",
+  "montage": "BioSemi 64, idealized sphere with radius 0.095 m; not digitized",
+  "spatial_model": "Fixed smooth neural/artifact gain fields; no head forward model",
+  "peak_mode": "Known artifact peak for each case, shared across channels",
+  "noise": "Independent Gaussian case/channel streams; SeedSequence([seed, case_id, channel_id])",
+  "fixture_shape": [
+    1,
+    64,
+    2500
+  ],
+  "python_recovered_shape": [
+    5,
+    64,
+    2500
+  ],
+  "truth_location": "metadata.mat: truth[64,2500], common to all cases",
+  "seconds": 1221.6318401999306,
+  "numpy_version": "1.26.4"
+}

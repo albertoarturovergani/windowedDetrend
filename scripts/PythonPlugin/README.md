@@ -68,6 +68,31 @@ or random replacement is performed here.
 
 ## Benchmark and tests
 
+### 64-channel scalp benchmark
+
+```bash
+python run_scalp_benchmark.py --output ../results/scalp64 --workers 8
+```
+
+This generates **214 epochs x 64 channels x 2,500 samples at 10 kHz**. Channels
+use BioSemi 64 labels and idealized spherical positions, with distinct smooth
+neural/artifact gain fields and independent channel noise. The clean signal
+is a known 50 Hz damped oscillator. The 214 cases comprise two 10 x 10
+artifact grids plus 14 extreme/noisy cases. The current Lagrange/cubic default
+and four comparators produce **68,480 reconstructed channel traces**. Saved
+per-epoch MAT fixtures allow MATLAB to process exactly the same inputs.
+These waveform fixtures, `metadata.mat` and MATLAB `case_*_results.mat` arrays
+are generated locally and excluded from Git. Run the command above after
+cloning to recreate them; code, figures, CSV/JSON reports and the compact
+`matlab_metrics.mat` summary remain versioned.
+
+See [dataset construction, limits, file shapes and MATLAB commands](../SCALP64_BENCHMARK.md).
+Worker count defaults to 1. This is an illustrative spatial simulation,
+without a biophysical head model. The original single-channel benchmark below
+and its historical figures retain their own results.
+
+### Single-channel and original-paper comparisons
+
 For a direct comparison against the original numerical branches on identical
 toy arrays, run `python compare_paper_plugin.py`. Source extracts and hashes
 are in `paper_reference`; the report is `../PAPER_PLUGIN_COMPARISON.md`.
@@ -113,3 +138,4 @@ computation. It has no effect on Lagrange or polynomial fits. The current
 notebook and direct paper comparison have been recomputed with this default.
 
 Windowed polynomial detrending: `rise_model=lagrange`, `decay_model=poly`, `decay_degree=3`, `constrain_rise=false`, and decay anchored to the observed peak. Peak detection remains automatic unless a split is supplied. Lagrange degree is N-1 for N rise samples; `rise_degree` is ignored for this model. At the input nodes, the interpolant equals the input, so the corrected rise window is zero, including any neural signal. Evaluation uses that exact identity rather than a high-degree monomial solve. The historical four-method benchmark explicitly retains its exponential and polynomial 3/3 and 3/5 configurations; it is not a benchmark of the new default. The updated toy demonstrates the new default models.
+

@@ -27,6 +27,11 @@ Paper = "https://doi.org/10.1088/1741-2552/ae668e"
 [project.scripts]
 windowed-detrend-benchmark = "windowed_detrend.benchmark:main"
 windowed-detrend-artifact-sweep = "windowed_detrend.artifact_sweep:main"
+windowed-detrend-scalp-benchmark = "windowed_detrend.scalp_benchmark:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+windowed_detrend = ["data/*.txt"]
+

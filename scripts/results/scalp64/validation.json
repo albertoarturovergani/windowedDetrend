@@ -1,0 +1,68 @@
+{
+  "passed": true,
+  "fixture_hashes_verified": 214,
+  "regenerated_extreme_cases": [
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213
+  ],
+  "metric_keys_verified": 68480,
+  "max_recovery_mse_difference": 2.2026824808563106e-13,
+  "per_method": {
+    "default_lagrange3": {
+      "traces": 13696,
+      "max_absolute_output_difference": 1.03383968053095e-12,
+      "max_recovery_mse_difference": 1.7763568394002505e-13
+    },
+    "window_exp": {
+      "traces": 13696,
+      "max_absolute_output_difference": 9.9475983006414e-14,
+      "max_recovery_mse_difference": 5.1514348342607263e-14
+    },
+    "window_poly3": {
+      "traces": 13696,
+      "max_absolute_output_difference": 1.03383968053095e-12,
+      "max_recovery_mse_difference": 2.2026824808563106e-13
+    },
+    "window_poly5": {
+      "traces": 13696,
+      "max_absolute_output_difference": 6.15685280536127e-12,
+      "max_recovery_mse_difference": 3.952393967665557e-14
+    },
+    "global_biexp": {
+      "traces": 13696,
+      "max_absolute_output_difference": 3.12638803734444e-13,
+      "max_recovery_mse_difference": 1.2330414467243145e-14
+    }
+  },
+  "python_version": "3.12.10",
+  "numpy_version": "1.26.4",
+  "scipy_version": "1.15.2",
+  "source_sha256": {
+    "PythonPlugin/src/windowed_detrend/scalp_benchmark.py": "14f370a6de958d0e8e1fff8fadaba398c722d97f471550f1d54616529dac1073",
+    "PythonPlugin/src/windowed_detrend/core.py": "1b4823d027c5bfd8aedf0c2098879b027b95d8f3acece997d10485e15c29671e",
+    "PythonPlugin/src/windowed_detrend/data/biosemi64.txt": "8bd39ec923854853c1d6830c46cd4942f700d90ba9112541e21e45ea2a6fd7af",
+    "MatlabPlugin/run_scalp_benchmark.m": "cbb8e6f9ac5f5221a129fa0d9e6df9074c019639fcea050b7e6b7d75ef66b37d",
+    "MatlabPlugin/tmspath_detrend.m": "dd6e0c612dac56db286b1cdeda709e362137dc2a84294de56d7eca83534828f2"
+  },
+  "source_normalized_text_sha256": {
+    "PythonPlugin/src/windowed_detrend/scalp_benchmark.py": "3389986245a8b2d54924028fd5a505c9f5bb3ccf79ff3831f38a1a3047c9df48",
+    "PythonPlugin/src/windowed_detrend/core.py": "66c866655e65082da68413881cf11f1bc108db4ffccc2017d4923eacf15d0425",
+    "PythonPlugin/src/windowed_detrend/data/biosemi64.txt": "5df32c97432e71eda1783939ba87658f36b854138fd65ac5285366df6c4c1e5a",
+    "MatlabPlugin/run_scalp_benchmark.m": "ee089aeb25242e6a0aceca936ef889731731c6b1f9b479bd4946c48001d3da5f",
+    "MatlabPlugin/tmspath_detrend.m": "136604efe67cf73f038f044f2ecc155fc5161b3e28e129ee6dcde0f3cb82f0cf"
+  },
+  "fixture_bytes": 1251241844,
+  "wheel_contains_generator_montage_license": true
+}

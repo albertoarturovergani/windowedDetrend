@@ -40,6 +40,26 @@ Its known peak is t0 + tau_rise*log(1+tau_decay/tau_rise), not 15 ms.
 
 ## Fits and deliberate differences
 
+### 64-channel extension
+
+The multichannel benchmark retains the same 214 temporal conditions and
+extends each to 64 distinct channels using the BioSemi 64 layout on a 95 mm
+sphere. Fixed smooth gains vary neural and artifact amplitudes across channels;
+Gaussian noise is independent across case/channel/sample. Artifact taus and
+the clean oscillator's time course are shared within each condition. This
+illustrative spatial projection does not implement a physiological forward
+model, empirical EEG background or re-referencing.
+
+It evaluates the current Lagrange/cubic default and the four comparator
+models: 214 x 64 x 5 = 68,480 reconstructed traces. Five exponential search
+refinements are used. Input arrays, known peaks and configurations are shared
+between Python and MATLAB. Outputs are saved separately under `results/scalp64`;
+the old single-channel figures and parity statistics describe their original
+run. See [SCALP64_BENCHMARK.md](SCALP64_BENCHMARK.md) for exact construction,
+dimensions, seed handling, evaluation windows and reproduction commands.
+
+### Core fitting conventions
+
 - Implemented standalone, trial/channel-wise core, with selectable exponential
   rise/decay, polynomial, double decay, global biexponential and alpha bases.
 - Paper section 2.1 describes cubic polynomials; section 2.3.2 describes

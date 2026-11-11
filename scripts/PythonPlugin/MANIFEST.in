@@ -3,3 +3,5 @@ include requirements.txt
 recursive-include tests *.py
 include validate_additional.py
 include CITATION.cff
+include run_scalp_benchmark.py
+include plot_scalp_benchmark.py

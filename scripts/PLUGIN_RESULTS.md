@@ -10,6 +10,13 @@ Both standalone plugins accept epoched signals and expose configurable rise/deca
 
 ## Supplementary Figure 1 reconstructed in Python
 
+For the new **214 x 64 x 2,500** shared scalp benchmark, including the current
+default and four comparators, see [the 64-channel dataset description](SCALP64_BENCHMARK.md).
+Its 68,480 reconstructed traces and parity report are stored separately under
+`results/scalp64`. All traces passed, with maximum absolute difference
+**6.16e-12 a.u.** (tolerance 1e-6). The figures and numerical agreement statistics below refer
+to the historical single-channel experiments.
+
 ![Supplementary Figure 1, panels A-F](images/supplementary_figure_1_python.png)
 
 [Vector PDF](images/supplementary_figure_1_python.pdf)

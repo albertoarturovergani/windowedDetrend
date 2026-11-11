@@ -91,6 +91,54 @@ The functions return the corrected signal, estimated trend, and per-epoch/channe
 
 ## Parameters and evaluation
 
+### Shared synthetic dataset: 64 scalp channels
+
+The multichannel Python/MATLAB benchmark contains **214 epochs x 64 EEG
+channels x 2,500 samples**, sampled at **10 kHz** over 0-249.9 ms. It combines
+a known **50 Hz damped neural oscillator**, a capacitive artifact and optional
+Gaussian noise. BioSemi 64 labels and idealized spherical electrode positions
+define smooth, distinct neural/artifact gains across channels; noise is
+independent per case and channel.
+
+The 214 epochs comprise **200 grid cases** (two artifact families, each with
+10 rise constants from 1-50 ms and 10 decay constants from 25-250 ms), **two
+noiseless 3/200 ms extreme cases**, and **12 noisy extreme cases** (SD 0.5 and
+2 a.u., three replicates per level and family). The current Lagrange/cubic
+default plus four comparator methods yield **68,480 reconstructed channel
+traces**. Both languages receive exactly the same saved arrays, known artifact
+peaks and fit settings. Seed 42 makes the noise reproducible.
+
+This dataset provides a controlled multichannel validation with the channel
+count and electrode layout of a 64-channel cap. Its spatial gains are
+illustrative; it does not include a biophysical head model or real EEG
+recordings. Full construction, file shapes, metrics and reproduction commands
+are in [the 64-channel benchmark guide](scripts/SCALP64_BENCHMARK.md).
+Figures, per-channel metrics and validation reports are in
+`scripts/results/scalp64`. The full 64-channel waveform dataset is generated
+locally and excluded from Git: `fixtures/*.mat`, `metadata.mat` and the native
+MATLAB `case_*_results.mat` waveform files. The generator, seed, parameters,
+CSV/JSON reports and binary `matlab_metrics.mat` summary are versioned.
+The historical single-channel benchmark and figures retain their original results.
+
+The complete 64-channel comparison passed on all **68,480 reconstructed
+traces**, with a maximum Python/MATLAB absolute difference of **6.16e-12 a.u.**
+(tolerance 1e-6). The guide links the full per-channel metrics and validation
+reports.
+
+To regenerate the complete dataset after cloning, from `scripts/PythonPlugin`:
+
+```bash
+python run_scalp_benchmark.py --output ../results/scalp64 --workers 8
+```
+
+Then, from `scripts/MatlabPlugin`:
+
+```matlab
+run_scalp_benchmark('../results/scalp64', '../results/scalp64/matlab')
+```
+
+### Core parameters and further comparisons
+
 The default onset is 10 ms, the peak is detected automatically within the search interval, and correction extends to the epoch end. Inspect and adjust these settings for your data. Five search refinements apply to optional exponential fits; polynomial fits do not use this setting.
 
 - [Complete defaults, model options, algorithm flowchart and usage examples](scripts/POST_EPOCHING_GUIDE.md)
@@ -100,6 +148,14 @@ The default onset is 10 ms, the peak is detected automatically within the search
 - [Interactive supplementary dashboard](scripts/results/supplement1/dashboard.html): download the repository and open this HTML file locally.
 
 Artifact-fitting MSE and recovery MSE against the known clean oscillator answer different questions. A small fit residual does not alone demonstrate preservation of neural activity. The standalone plugins are adaptations of the original numerical workflow, with documented solver and boundary differences.
+
+## Acknowledgements
+
+This work was developed within the TMSpath clinical research project, ClinicalTrials.gov identifier `NCT06284291`, supported by the Italian Ministry of Health under grant `RF-2021-12372804`.
+
+Principal Investigator of the TMSpath project: **Prof. Simona Balestrini**.
+
+The associated EEG and TMS-EEG preprocessing pipeline is available in the [TMSpathPipeline repository](https://github.com/albertoarturovergani/TMSpathPipeline).
 
 ## Citation and license
 

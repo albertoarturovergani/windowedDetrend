@@ -177,3 +177,9 @@ cython_debug/
 /scripts/ARCHIVE_STATUS.md
 /scripts/FOLDER_COMPARISON.md
 /scripts/FOLDER_INVENTORY.md
+
+# Reproducible 64-channel waveform data (generated locally, never pushed).
+# Keep source code, figures, CSV/JSON reports and matlab_metrics.mat in Git.
+/scripts/results/scalp64/fixtures/
+/scripts/results/scalp64/metadata.mat
+/scripts/results/scalp64/matlab/case_*_results.mat
