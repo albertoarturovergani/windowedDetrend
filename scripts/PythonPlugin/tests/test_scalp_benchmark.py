@@ -27,7 +27,7 @@ class ScalpBenchmarkTests(unittest.TestCase):
     def test_multichannel_batch_matches_single_channel_and_preserves_input(self):
         t, y, _, _ = scalp_signal(('windowed', .003, .2, .5, 0, 'extreme'), 0)
         original = y.copy()
-        cfg = Config(fill_mode='none', peak_s=.015)
+        cfg = Config.figure_defaults(fill_mode='none', peak_s=.015)
         batch, trend, info = detrend(y[None], t, cfg)
         self.assertEqual(len(info['fits']), 64)
         np.testing.assert_array_equal(y, original)

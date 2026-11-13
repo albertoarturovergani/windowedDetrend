@@ -17,7 +17,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     labels, xyz, neural_gain, artifact_gain = scalp_layout()
     t, y, truth, _ = scalp_signal(('windowed', .003, .2, 0., 0, 'extreme'), 100)
-    cleaned, _, _ = detrend(y[None], t, Config(fill_mode='none', peak_s=.015))
+    cleaned, _, _ = detrend(y[None], t, Config.figure_defaults(fill_mode='none', peak_s=.015))
     # Azimuthal projection keeps the below-equator electrodes distinct.
     unit = xyz/.095
     angle = np.arccos(np.clip(unit[:, 2], -1, 1))

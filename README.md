@@ -2,15 +2,91 @@
 
 Python and MATLAB tools for windowed detrending of residual capacitive artifacts in epoched TMS-EEG recordings.
 
-The algorithm separates the artifact into rise and decay windows, fits each window independently with exponential or polynomial functions, and subtracts the assembled trend. The default uses **Lagrange rise interpolation and degree-3 polynomial decay**. A non-windowed bi-exponential is provided only as an external comparator.
+The default follows the published Windowed TEP notebook: quadratic pre-onset
+fit, Lagrange rise and free polynomial decay. Automatic slope screening decides
+whether to use windowed detrending and which decay degree to apply. See
+[TEP alignment and validation](scripts/TEP_ALIGNMENT.md).
 
-## Conceptual framework
+## Start with these three controls
 
-![Conceptual framework of windowed detrending](scripts/images/paper_concept_computed.png)
+Keep the published TEP defaults initially and change one control at a time,
+in this order. Both languages use the same parameter names and decisions.
 
-[Figure PDF](scripts/images/paper_concept_computed.pdf) | [Numerical source](scripts/reconstruct_paper_concept.py) | [Method and interpretation](scripts/POST_EPOCHING_GUIDE.md)
+| Priority | Control | Default and role |
+|---|---|---|
+| **1. Identify extreme-artifact channels and choose detrending** | **`slope_threshold`** | **0.5**. The main decision parameter: a channel whose slope score reaches or exceeds the threshold is classified as affected by an extreme artifact. |
+| **2. Choose the temporal windows** | `onset_s`, `peak_search_end_s` | **0 to 0.020 s** for peak search. The maximum absolute sample splits rise and decay. Pre extends through onset; decay continues to `end_s` (epoch end by default). |
+| **3. Keep the fitting models initially** | `pre_degree`, `rise_model`, `decay_degree` | **Pre: quadratic (2); rise: Lagrange; post: cubic (3)** for offset channels, quadratic (2) for other processed channels. |
 
-The figure is a computed conceptual example, not a universal ranking of fitting methods. Lagrange interpolation reproduces every observed rise sample, so subtraction leaves zero in that window before the subsequent filling step, including removal of any neural activity. See the guide for model assumptions and comparator limitations.
+**Slope Threshold is the main parameter for recognizing extreme-artifact
+channels and deciding which detrending strategy to apply.** The algorithm
+assigns each channel a slope score. A channel is classified as affected by an
+extreme artifact when its score **reaches or exceeds the threshold**. Here,
+"extreme" means that the channel meets this threshold criterion.
+
+With automatic screening (`channel_policy='auto'`):
+
+- **At least one channel reaches the threshold:** activate **windowed
+  detrending**. With the defaults, all selected channels are processed;
+  identified extreme-artifact channels have cubic decay, and the others have
+  quadratic decay. Both groups receive Lagrange rise and configured filling.
+- **The threshold is higher than every channel score:** no channel is
+  classified as extreme, so apply the **basic, whole-epoch linear detrend**
+  (`overall_degree=1`). This branch has no Lagrange zeroing or gap filling.
+
+Lowering the threshold identifies more channels as extreme; raising it
+identifies fewer and can select the basic linear detrend instead. The default
+is **0.5**, as in the published TEP notebook. In the supplied demo, 0.5
+identifies EEG01 and EEG02, while 3 is higher than every channel score and
+selects the basic linear detrend.
+
+The channel score is the largest absolute epoch-mean standardized slope over
+pre, rise and decay: `max(abs(mean_z))`. Slopes are standardized over the
+selected channels and epochs, then averaged over epochs for each
+channel/window. Equality counts (`>=`); selection therefore depends on the
+channel population. Use matching good EEG channels in both environments.
+
+The search interval locates the **peak** that defines the windows. Slopes are
+estimated in all three windows; they are not estimated only within the peak
+search interval. Lagrange has degree N-1 through N rise samples and zeroes
+those samples before filling; `rise_degree` does not control it.
+
+Leave decay unconstrained (`constrain_decay=false`) and other advanced options
+at their defaults for the initial test. **Gaussian filling stays enabled in
+both demos**, matching the library default `fill_mode='gaussian'`.
+Full settings and alternatives: [post-epoching guide](scripts/POST_EPOCHING_GUIDE.md).
+
+## Try the multichannel EEG demonstration
+
+The Python notebook and MATLAB Live Script generate the same **16-channel,
+12-stimulus** synthetic EEG at 2 kHz. It includes a known damped neural
+response, ongoing background, noise, stronger artifacts in two channels,
+stimulus latency jitter (+/-0.7 ms), channel latency differences (+/-0.35 ms)
+and artifact amplitude jitter (+/-10%). Event markers remain at t=0; this
+simulates response/artifact timing variability after pulse handling.
+
+Section **A** lists threshold, temporal windows and models in that order.
+Section **B** controls synthetic data generation. The fit uses automatic
+channel screening and all library defaults, including Gaussian filling of
+the zeroed rise plus margin. The only recovered method shown is **Polynomial**.
+
+The demo changes only the threshold on the same data and shows the resulting
+channel scores, branch decision, recovered waveforms and timing jitter:
+
+| Threshold | Flagged channels in this simulation | Operation |
+|---|---|---|
+| 0.25 | 16 | Windowed; cubic decay on all channels |
+| **0.5 (default)** | **2: EEG01 and EEG02** | **Windowed; cubic on these two, quadratic on the others** |
+| 1 or 2 | 2 | Same windowed decision |
+| 3 | 0 | Whole-epoch linear fallback, without gap filling |
+
+These are example outcomes for the supplied synthetic data, not thresholds
+recommended for other recordings. MSE uses the known synthetic clean signal.
+
+![Multichannel threshold decisions and Polynomial recovery](scripts/results/filling_validation/python_demo.png)
+
+[Simulated EEG and jitter](scripts/results/filling_validation/python_demo_input.png)
+| [MATLAB figure](scripts/results/filling_validation/matlab_demo.png)
 
 ## Place in the preprocessing pipeline
 
@@ -36,9 +112,9 @@ conda activate windowed-detrend
 python -m jupyterlab demo_windowed_detrend.ipynb
 ```
 
-The notebook imports the local source automatically. Edit sections **A: toy signal** and **B: detrending parameters**, then run all cells.
+The notebook imports local source automatically. Edit **A: controls in order of importance**, then **B: synthetic EEG** if needed, and run all cells. It uses automatic channel screening and displays Polynomial with Gaussian filling enabled.
 
-- [Python notebook with toy signal and plots](scripts/PythonPlugin/demo_windowed_detrend.ipynb)
+- [Python notebook with multichannel EEG and threshold comparison](scripts/PythonPlugin/demo_windowed_detrend.ipynb)
 - [Environment setup, including the venv alternative](scripts/PythonPlugin/ENVIRONMENT.md)
 - [Python API and tests](scripts/PythonPlugin/README.md)
 
@@ -52,15 +128,14 @@ plugin_src = Path("/path/to/windowedDetrend/scripts/PythonPlugin/src")
 sys.path.insert(0, str(plugin_src))
 from windowed_detrend import Config, detrend
 
-cfg = Config(rise_model="lagrange", decay_model="poly", decay_degree=3,
-             refinements=5)
+cfg = Config(slope_threshold=0.5, onset_s=0.0, peak_search_end_s=0.020)
 # data and times come from your already preprocessed, epoched recording.
 corrected, trend, diagnostics = detrend(data, times, cfg)
 ```
 
 ## MATLAB: run directly from the downloaded files
 
-Open the Live Script and select **Run All**. Edit the opening toy-signal and detrending parameter sections to explore the alternatives.
+Open the Live Script and select **Run All**. Edit section A starting with the threshold; section B controls the simulated EEG.
 
 ```matlab
 plugin_dir = fullfile('/path/to/windowedDetrend', 'scripts', 'MatlabPlugin');
@@ -76,10 +151,8 @@ For an existing epoched array:
 
 ```matlab
 cfg = tmspath_config();
-cfg.rise_model = 'lagrange';
-cfg.decay_model = 'poly';
-cfg.decay_degree = 3;
-cfg.refinements = 5;
+cfg.slope_threshold = 0.5;
+cfg.onset_s = 0.0; cfg.peak_search_end_s = 0.020; % Choose for your recording.
 [corrected, trend, diagnostics] = tmspath_detrend(data, times, cfg);
 ```
 
@@ -91,7 +164,25 @@ The functions return the corrected signal, estimated trend, and per-epoch/channe
 
 ## Parameters and evaluation
 
-### Shared synthetic dataset: 64 scalp channels
+### Current TEP validation
+
+The updated Python/MATLAB workflow passes 12 cases against the original TEP
+functions, including channel selection, sample boundaries, filling and the
+no-offset fallback. The maximum deterministic Python/MATLAB difference is
+1.21e-13 a.u. Native Gaussian draws differ by design; the original unfilled
+Lagrange numerical residual is reported separately. See the
+[TEP validation and reports](scripts/TEP_ALIGNMENT.md#reproduce-the-comparisons).
+
+### Current multichannel demonstration
+
+The 16-channel, 12-epoch demo passes matched-input Python/MATLAB checks at
+five thresholds. Selected channels and branch decisions agree exactly; the
+maximum trend and corrected-waveform difference outside Gaussian replacement
+is 1.32e-13 a.u. Gaussian masks/parameters agree; native random samples differ.
+Reports are in
+[scripts/results/filling_validation](scripts/results/filling_validation).
+
+### Historical synthetic dataset: 64 scalp channels
 
 The multichannel Python/MATLAB benchmark contains **214 epochs x 64 EEG
 channels x 2,500 samples**, sampled at **10 kHz** over 0-249.9 ms. It combines
@@ -103,8 +194,8 @@ independent per case and channel.
 The 214 epochs comprise **200 grid cases** (two artifact families, each with
 10 rise constants from 1-50 ms and 10 decay constants from 25-250 ms), **two
 noiseless 3/200 ms extreme cases**, and **12 noisy extreme cases** (SD 0.5 and
-2 a.u., three replicates per level and family). The current Lagrange/cubic
-default plus four comparator methods yield **68,480 reconstructed channel
+2 a.u., three replicates per level and family). The historical Lagrange/cubic
+figure profile plus four comparator methods yield **68,480 reconstructed channel
 traces**. Both languages receive exactly the same saved arrays, known artifact
 peaks and fit settings. Seed 42 makes the noise reproducible.
 
@@ -120,7 +211,7 @@ MATLAB `case_*_results.mat` waveform files. The generator, seed, parameters,
 CSV/JSON reports and binary `matlab_metrics.mat` summary are versioned.
 The historical single-channel benchmark and figures retain their original results.
 
-The complete 64-channel comparison passed on all **68,480 reconstructed
+Using the explicit historical figure profile, the complete 64-channel comparison passed on all **68,480 reconstructed
 traces**, with a maximum Python/MATLAB absolute difference of **6.16e-12 a.u.**
 (tolerance 1e-6). The guide links the full per-channel metrics and validation
 reports.
@@ -139,7 +230,7 @@ run_scalp_benchmark('../results/scalp64', '../results/scalp64/matlab')
 
 ### Core parameters and further comparisons
 
-The default onset is 10 ms, the peak is detected automatically within the search interval, and correction extends to the epoch end. Inspect and adjust these settings for your data. Five search refinements apply to optional exponential fits; polynomial fits do not use this setting.
+The TEP defaults and current demo search for the peak from 0 to 20 ms and fit through the epoch end. Automatic slope screening chooses channel degrees and the no-offset fallback. Inspect and adjust these settings for your data. Five search refinements apply to optional exponential fits; polynomial fits do not use this setting.
 
 - [Complete defaults, model options, algorithm flowchart and usage examples](scripts/POST_EPOCHING_GUIDE.md)
 - [Direct comparison with the original paper's numerical branches](scripts/PAPER_PLUGIN_COMPARISON.md)
@@ -148,6 +239,14 @@ The default onset is 10 ms, the peak is detected automatically within the search
 - [Interactive supplementary dashboard](scripts/results/supplement1/dashboard.html): download the repository and open this HTML file locally.
 
 Artifact-fitting MSE and recovery MSE against the known clean oscillator answer different questions. A small fit residual does not alone demonstrate preservation of neural activity. The standalone plugins are adaptations of the original numerical workflow, with documented solver and boundary differences.
+
+## Historical conceptual framework
+
+![Conceptual framework of windowed detrending](scripts/images/paper_concept_computed.png)
+
+[Figure PDF](scripts/images/paper_concept_computed.pdf) | [Numerical source](scripts/reconstruct_paper_concept.py) | [Method and interpretation](scripts/POST_EPOCHING_GUIDE.md)
+
+The figure uses the explicit historical figure profile (see [alignment](scripts/TEP_ALIGNMENT.md#historical-figures-and-migration)). It is a computed conceptual example, not a universal ranking of fitting methods. Lagrange interpolation reproduces every observed rise sample, so subtraction leaves zero in that window before the subsequent filling step, including removal of any neural activity. See the guide for model assumptions and comparator limitations.
 
 ## Acknowledgements
 
@@ -169,7 +268,7 @@ Vergani, A. A., Peroni, G., Bruscagli, C., Lionti, A., Brandizzi, F., Lenge, M.,
 
 ## Experimental recordings
 
-The Python and MATLAB demos disable filling (`fill_mode='none'`) to show the
-detrending result. For experimental recordings, enable random filling of the
-zeroed interval with `fill_mode='gaussian'` (the library default), and choose
+The Python and MATLAB demos keep Gaussian filling enabled (`fill_mode='gaussian'`),
+matching the library default. The zeroed rise plus its margin is replaced with
+Gaussian noise. For experimental recordings, choose
 the peak-search and correction windows for your data. See [filling options](scripts/FILLING.md).

@@ -1,5 +1,9 @@
 # Direct comparison: original paper branches and Python plugin
 
+This report retains the **historical figure profile** via Config.figure_defaults(...)
+and tmspath_config('figure'). The label default_lagrange3 refers to that recorded
+profile. For current defaults and full TEP comparisons see [TEP_ALIGNMENT.md](TEP_ALIGNMENT.md).
+
 This experiment executes numerical functions extracted unchanged from the original figure notebook and the Lagrange branch/polynomial helper from `computeDetrend_v6`. Controlled wrappers provide identical inputs and explicit fit settings. It does not run the entire preprocessing pipeline or claim equivalence to every historical script version. Source names, cell/line locations and SHA-256 hashes are in `PythonPlugin/paper_reference/manifest.json`.
 
 ## Shared inputs and evaluation

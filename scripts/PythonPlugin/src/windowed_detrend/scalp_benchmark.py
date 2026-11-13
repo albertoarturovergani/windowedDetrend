@@ -59,7 +59,7 @@ def scalp_signal(case, case_id, seed=42):
 
 
 def scalp_configs(peak):
-    return {'default_lagrange3': Config(fill_mode='none', peak_s=peak), **configs(peak)}
+    return {'default_lagrange3': Config.figure_defaults(fill_mode='none', peak_s=peak), **configs(peak)}
 
 
 def _run_case(job):

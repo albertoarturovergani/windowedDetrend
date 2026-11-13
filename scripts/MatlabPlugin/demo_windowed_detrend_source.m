@@ -1,149 +1,154 @@
-%% Windowed detrending: MATLAB demonstration
-% Run all sections in order. This demonstration uses base MATLAB and imports
-% the plugin from the same directory, without File Exchange installation.
-% Pipeline: pulse handling -> bad-trial/channel removal -> epoching ->
-% windowed detrending -> ICA -> feature extraction.
-pluginDir = fileparts(mfilename('fullpath'));
-addpath(pluginDir);
+%% Multichannel EEG: threshold first
+% Run all sections in order. Synthetic EEG, not experimental validation.
+% Base MATLAB only; no plugin installation or extra toolboxes needed.
+pluginDir=fileparts(mfilename('fullpath')); addpath(pluginDir);
 
-%% A. Toy signal parameters
-% These values generate the input; they do not configure detrending.
-toy.fs_hz = 10000;              % Sampling rate in Hz.
-toy.epoch_start_s = -0.100;     % First epoch sample, relative to TMS.
-toy.epoch_end_s = 0.250;        % Exclusive end; last sample is one step earlier.
-toy.onset_s = 0.010;           % Synthetic artifact and oscillator onset.
-toy.peak_s = 0.015;            % Charging-to-discharging transition.
-toy.tau_rise_s = 0.003;        % Positive artifact charging time constant.
-toy.tau_decay_s = 0.200;       % Positive artifact discharging time constant.
-toy.artifact_gain = -100;      % Signed scale; positive values reverse polarity.
-toy.neural_amplitude = 5;      % Oscillator amplitude scale, arbitrary units.
-toy.neural_frequency_hz = 50;  % Oscillator frequency in Hz.
-toy.neural_damping_per_s = 25; % Envelope exp(-rate * time).
-toy.background_amplitude = 0.5; % Continuous synthetic background.
-toy.background_frequency_hz = 11; % Background frequency in Hz.
+%% A. Controls in order of importance
+cfg=tmspath_config();
+% 1. Slope Threshold: main decision parameter for extreme-artifact detection.
+% A channel score >= threshold is classified as extreme: enable windowed fits.
+% Threshold above ALL channel scores: apply the basic whole-epoch linear fit.
+% Scores are absolute epoch-mean standardized slopes. Lower => more flagged.
+cfg.slope_threshold=0.5;
+% 2. Peak search interval, seconds relative to the recorded TMS trigger.
+% The detected peak splits rise/decay; slopes use pre, rise AND decay.
+cfg.onset_s=0.0;
+cfg.peak_search_end_s=0.020;
+% 3. Models, kept at the published Windowed TEP defaults.
+cfg.pre_degree=2;
+cfg.rise_model='lagrange'; % Interpolates every rise sample; degree N-1.
+cfg.decay_model='poly';
+cfg.decay_degree=3;       % Offset channels: cubic; others: degree 2.
+cfg.fill_mode='gaussian'; % Default: replace zeroed rise plus margin with Gaussian noise.
+% All other fields keep their library defaults: channel_policy='auto',
+% constrain_decay=false, only_offset_channels=false, overall_degree=1.
+% No flagged channel => whole-epoch linear fit, no Lagrange and no filling.
+% At least one flagged => windowed fits on ALL selected channels by default.
+% Changing cfg does not change the synthetic data below.
 
-%% B. Detrending parameters
-% All 22 fields are explicit. No configuration is overwritten in later sections.
-cfg = tmspath_config();
-cfg.mode = 'windowed';        % Separate rise/decay; 'global' is external comparison only.
-cfg.onset_s = 0.010;          % Correction start after pulse handling.
-cfg.peak_s = [];              % Detect the peak within the user-chosen search window.
-cfg.peak_search_end_s = 0.030; % Automatic search end, limited by correction end.
-cfg.end_s = [];              % [] uses last sample; otherwise supply seconds.
-cfg.rise_model = 'lagrange';  % Alternatives: 'poly', 'singlerise'.
-cfg.decay_model = 'poly';     % Alternatives: 'singledecay', 'doubledecay'.
-cfg.rise_degree = 3;         % Only for 'poly'; ignored for Lagrange (degree N-1).
-cfg.decay_degree = 3;        % Polynomial degree; alternatives include 1 and 5.
-cfg.pre_degree = [];        % [] preserves pre-onset data; 0 constant, 1 linear fit.
-cfg.constrain_rise = false;  % Required for Lagrange; true anchors other rise fits to zero.
-cfg.constrain_decay = true;  % Anchor to observed split amplitude; false fits freely.
-cfg.fit_offset = false;     % Optional constant offset for exponential models.
-cfg.tau_min_s = 0.0005;      % Lower fitted-tau bound, positive.
-cfg.tau_max_s = 1.0;         % Upper fitted-tau bound, greater than lower bound.
-cfg.grid_size = 21;         % Initial candidates per tau, integer >= 3.
-cfg.refinements = 5;        % Default 5; integer >= 0. More levels improve tau resolution.
-cfg.channels = [];          % [] selects all; 1 selects the toy channel (one-based).
-cfg.global_model = 'biexp';  % Inactive in windowed mode; external comparator only.
-cfg.fill_mode = 'none';      % Demo: off. Use 'gaussian' for experimental recordings.
-cfg.fill_seed = 42;         % Reproducible local RNG; change to obtain another realization.
-cfg.fill_margin_s = 0.005;   % Expand sampled rise by 5 ms on each side; 0 fills only rise.
+%% B. Synthetic EEG: channels, stimuli and jitter
+toy=struct('n_epochs',12,'n_channels',16,'fs_hz',2000,'seed',42, ...
+ 'stimulus_jitter_s',0.0007, ... % Common latency per stimulus: +/-0.7 ms.
+ 'channel_jitter_s',0.00035, ... % Additional latency per channel: +/-0.35 ms.
+ 'amplitude_jitter',0.10, ...   % Artifact amplitude varies +/-10% per trace.
+ 'noise_sd',0.05);             % Independent noise, arbitrary units.
+[data,times,truth,artifact,metadata]=tmspath_demo_data(toy);
+labels=metadata.channel_labels;
+% Two channels have stronger artifacts, with weaker contamination elsewhere.
+% A damped response and ongoing background provide known clean ground truth.
+% Jitter changes signal latency relative to fixed event markers at t=0;
+% it does not resample epochs or introduce the removed pulse artifact.
+fprintf('Input shape (epochs, channels, samples): %d x %d x %d\n',size(data));
+disp('Stimulus jitter (ms):'); disp(1000*metadata.stimulus_jitter_s');
 
-% Evaluation and display settings do not control fitting.
-evaluation_start_s = toy.onset_s;
-evaluation_end_s = [];      % [] uses last sample; MSE interval for the polynomial fit.
-plot_limits_ms = [-20 250]; % Display only.
-
-%% Parameter options and interpretation
-% Edit sections A and B, then Run All. Toy and fit parameters are independent.
-% A changed toy onset/peak does not automatically change cfg.onset_s/peak_s.
-% Peak: [] detects maximum absolute input amplitude; inspect automatic peaks.
-% Rise: lagrange interpolates all nodes; poly fits a polynomial; singlerise
-% models exponential charging. Decay: poly, singledecay or doubledecay.
-% Polynomial degrees: nonnegative integers; 1 linear, 3 cubic, 5 quintic.
-% More flexibility can absorb neural activity. Lagrange degree is N-1.
-% Keep constrain_rise=false for Lagrange; subtraction zeroes its rise samples,
-% including neural activity. Decay anchoring uses observed signal, not truth.
-% Tau bounds, grid and refinements apply only to exponential fits. They are
-% not the toy generating constants. Larger searches increase computation.
-% fit_offset is inactive for polynomial and Lagrange models.
-% Advanced core bases: alpha (alpha-shaped transient), biexp (multiplicative
-% rise/decay). These are not recommended presets for individual windows.
-% Not all model/anchor combinations are valid: Lagrange requires no anchor;
-% zero-at-origin functions cannot match arbitrary nonzero anchors without an offset.
-% Presets: lagrange/poly with cubic decay and unconstrained rise (default);
-% poly/poly degrees 3/3 or 3/5; singlerise/singledecay with constrained rise/decay.
-% Keep mode='windowed'. The global mode is an external-comparison utility.
-% Times are seconds except plot_limits_ms. Tau values must be positive.
-% Fit peak must be strictly inside the correction interval. Minimum samples:
-% Lagrange 2; polynomial max(4,degree+2); exponential 4. Do not upsample to
-% manufacture independent fitting information. The toy has one channel.
-
-%% 1. Generate the toy signal using section A
-assert(toy.fs_hz > 0 && toy.epoch_end_s > toy.epoch_start_s);
-assert(toy.epoch_start_s <= toy.onset_s && toy.onset_s < toy.peak_s && toy.peak_s < toy.epoch_end_s);
-assert(toy.tau_rise_s > 0 && toy.tau_decay_s > 0);
-times = (round(toy.epoch_start_s*toy.fs_hz):round(toy.epoch_end_s*toy.fs_hz)-1)' / toy.fs_hz;
-u = max(times-toy.onset_s,0);
-neural = toy.neural_amplitude * exp(-toy.neural_damping_per_s*u) .* sin(2*pi*toy.neural_frequency_hz*u);
-neural = neural + toy.background_amplitude * sin(2*pi*toy.background_frequency_hz*times);
-artifact = toy.artifact_gain * (1-exp(-u/toy.tau_rise_s));
-decay = times >= toy.peak_s;
-artifact(decay) = toy.artifact_gain * (1-exp(-(toy.peak_s-toy.onset_s)/toy.tau_rise_s)) * exp(-(times(decay)-toy.peak_s)/toy.tau_decay_s);
-data = reshape(neural+artifact,1,1,[]);
-fprintf('Array shape (epochs, channels, samples): %d x %d x %d\n',size(data));
-
-%% 2. Apply the configuration from section B
-[corrected, trend, diagnostics] = tmspath_detrend(data,times,cfg);
-detected_peak_s = diagnostics.fits{1}.peak_s;
-fprintf('Detected/supplied split: %.3f ms; toy artifact split: %.3f ms\n',1000*detected_peak_s,1000*toy.peak_s);
-assert(isequal(size(corrected),size(data)));
-if isempty(cfg.pre_degree)
-    outside = times < cfg.onset_s;
-    if isfield(diagnostics.fits{1},'fill')
-        fill = diagnostics.fits{1}.fill;
-        outside(fill.target_first:fill.target_last) = false;
-    end
-    assert(isequal(corrected(:,:,outside),data(:,:,outside)));
+%% 1. Apply automatic screening and Polynomial detrending
+[corrected,trend,diagnostics]=tmspath_detrend(data,times,cfg);
+selection=diagnostics.channel_selection;
+scores=max(abs(selection.mean_z),[],2);
+offset_channels=selection.offset_channels;
+operation=diagnostics.operation;
+mask=times>=0;
+error_array=corrected(:,:,mask)-truth(:,:,mask);
+mse_full=mean(error_array(:).^2);
+fprintf('Operation: %s\n',operation);
+disp('Offset channels:'); disp(labels(offset_channels));
+disp('Channel  max|mean z-slope|  classification');
+for c=1:toy.n_channels
+ classification='below threshold'; if ismember(c,offset_channels), classification='offset'; end
+ fprintf('%-7s  %8.4f          %s\n',labels{c},scores(c),classification);
 end
-disp('Output dimensions and applicable preservation checks passed');
-
-%% 3. Evaluate recovery against the known oscillator
-% The decay-only mask uses the toy peak independently of the fitted split.
-recovered = reshape(corrected,[],1);
-if isempty(evaluation_end_s), evaluation_end = times(end); else, evaluation_end = evaluation_end_s; end
-mask = times >= evaluation_start_s & times <= evaluation_end;
-decay_mask = mask & times >= toy.peak_s;
-assert(any(mask) && any(decay_mask),'Evaluation windows must contain samples');
-mse_full = mean((recovered(mask)-neural(mask)).^2);
-mse_decay = mean((recovered(decay_mask)-neural(decay_mask)).^2);
-fprintf('Evaluation interval: recovery MSE = %.6f a.u.^2\n',mse_full);
-fprintf('Toy decay interval: recovery MSE = %.6f a.u.^2\n',mse_decay);
-
-%% 4. Plot the input, fitted trend, recovery and error
-fig = figure('Color','w','Position',[100 100 1000 850]);
-layout = tiledlayout(fig,3,1,'TileSpacing','compact');
-ax1 = nexttile(layout);
-plot(times*1000, reshape(data,[],1), 'DisplayName','Observed: neural + artifact');
-hold on;
-plot(times*1000, reshape(trend,[],1), '--', 'DisplayName','Estimated trend');
-ax2 = nexttile(layout);
-plot(times*1000, neural, 'k', 'DisplayName','Known neural signal'); hold on;
-plot(times*1000, recovered, 'DisplayName','Polynomial');
-ax3 = nexttile(layout);
-plot(times*1000, recovered-neural, 'r', 'DisplayName','Recovery error');
-for ax = [ax1 ax2 ax3]
-    xline(ax,toy.onset_s*1000,':','HandleVisibility','off');
-    xline(ax,toy.peak_s*1000,':','HandleVisibility','off');
-    xline(ax,detected_peak_s*1000,'--','Fitted split','HandleVisibility','off');
-    ylabel(ax,'Amplitude (a.u.)');
-    legend(ax,'Location','best'); xlim(ax,plot_limits_ms);
+fprintf('Post-trigger recovery MSE: %.6f a.u.^2\n',mse_full);
+% Inspect operation before accessing rise/decay: fallback records have overall.
+if strcmp(operation,'windowed')
+ degrees=[];
+ for k=1:numel(diagnostics.fits)
+  rec=diagnostics.fits{k}; if rec.epoch==1, degrees(end+1)=rec.decay.degree; end %#ok<SAGROW>
+ end
+ disp('Decay degree by channel:'); disp(degrees);
+else
+ disp('No windowed detrending: whole-epoch linear fit; no gap filling.');
 end
-xlabel(ax3,'Time relative to TMS pulse (ms)');
-title(layout,'Polynomial: Lagrange rise / cubic decay');
 
-%% 5. Continue your existing pipeline
-% Replace toy data with preprocessed epochs x channels x samples and times
-% in seconds. Edit section B and inspect output before fitting subsequent ICA.
-% For an existing EEGLAB dataset: tmspath_eeglab(EEG,cfg).
-% A single-channel toy cannot demonstrate multichannel ICA.
-data_for_ica = corrected;
+%% 2. Change only the threshold on the SAME data
+% This sweep illustrates decisions; it does not optimize the threshold.
+sweep_thresholds=unique([.25 .5 1 2 3 cfg.slope_threshold]);
+sweep_counts=zeros(size(sweep_thresholds));
+sweep_operations=cell(size(sweep_thresholds)); sweep_mse=zeros(size(sweep_thresholds));
+disp('Threshold  flagged channels  operation             recovery MSE');
+for k=1:numel(sweep_thresholds)
+ sweep_cfg=cfg; sweep_cfg.slope_threshold=sweep_thresholds(k);
+ [sweep_output,~,sweep_info]=tmspath_detrend(data,times,sweep_cfg);
+ sweep_counts(k)=numel(sweep_info.channel_selection.offset_channels);
+ sweep_operations{k}=sweep_info.operation;
+ error_array=sweep_output(:,:,mask)-truth(:,:,mask);
+ sweep_mse(k)=mean(error_array(:).^2);
+ fprintf('%8.3f  %16d  %-20s  %.6f\n',sweep_thresholds(k),sweep_counts(k),sweep_operations{k},sweep_mse(k));
+end
+
+%% 3. Inspect screening and recovered waveforms
+fig=figure('Color','w','Position',[100 100 1200 800]);
+layout=tiledlayout(fig,2,2,'TileSpacing','compact','Padding','compact');
+blue=[.14 .35 .47]; orange=[.71 .32 .16]; grey=[.46 .54 .60];
+ax=nexttile(layout); bars=bar(ax,1:toy.n_channels,scores,'FaceColor','flat');
+bars.CData=repmat(grey,toy.n_channels,1);
+bars.CData(offset_channels,:)=repmat(orange,numel(offset_channels),1);
+hold(ax,'on'); yline(ax,cfg.slope_threshold,'--',sprintf('Threshold = %g',cfg.slope_threshold),'Color',orange);
+xticks(ax,1:toy.n_channels); xticklabels(ax,labels); xtickangle(ax,60); ax.FontSize=9;
+ylabel(ax,'max |mean slope z-score|'); title(ax,'1. Channel decision');
+ax=nexttile(layout);
+plot(ax,sweep_thresholds,sweep_counts,'o','Color',blue,'MarkerFaceColor',blue); hold(ax,'on');
+for k=1:numel(sweep_thresholds)
+ text_label='Windowed'; if strcmp(sweep_operations{k},'overall'), text_label='Linear'; end
+ text(ax,sweep_thresholds(k),sweep_counts(k)+.8,text_label,'HorizontalAlignment','center','FontSize',8);
+end
+xline(ax,cfg.slope_threshold,'--','Color',orange);
+ylim(ax,[-1 toy.n_channels+3]); xlim(ax,[min(sweep_thresholds)-.15 max(sweep_thresholds)+.2]);
+xlabel(ax,'Slope threshold'); ylabel(ax,'Flagged channels'); title(ax,'2. Same EEG, different threshold');
+[~,strong]=max(scores); [~,weak]=min(scores); display_channels=[strong weak];
+for c=display_channels
+ ax=nexttile(layout);
+ y=reshape(truth(1,c,:),[],1); z=reshape(corrected(1,c,:),[],1);
+ plot(ax,times*1000,y,'k','DisplayName','Known clean signal'); hold(ax,'on');
+ plot(ax,times*1000,z,'Color',orange,'DisplayName','Polynomial');
+ limits=ylim(ax); search_ms=1000*[cfg.onset_s cfg.peak_search_end_s];
+ patch(ax,search_ms([1 2 2 1]),limits([1 1 2 2]),[.86 .91 .94], ...
+  'FaceAlpha',.4,'EdgeColor','none','DisplayName','Peak search');
+ subtitle='whole-epoch linear';
+ for k=1:numel(diagnostics.fits)
+  rec=diagnostics.fits{k};
+  if rec.epoch==1 && rec.channel==c && isfield(rec,'peak_s')
+   xline(ax,1000*rec.peak_s,':','Color',blue,'DisplayName','Detected split');
+   subtitle=sprintf('decay degree %d',rec.decay.degree); break;
+  end
+ end
+ title(ax,sprintf('%s, epoch 1: %s',labels{c},subtitle));
+ xlabel(ax,'Time from trigger (ms)'); ylabel(ax,'Amplitude (a.u.)');
+ xlim(ax,[-20 200]);
+end
+% One shared legend in a separate tile, outside both waveform axes.
+wave_legend=legend(ax,'Orientation','horizontal','NumColumns',2,'FontSize',9,'Box','off');
+wave_legend.Layout.Tile='south';
+title(layout,sprintf('Polynomial | %d channels x %d stimuli | %s',toy.n_channels,toy.n_epochs,operation));
+
+%% 4. Inspect the simulated EEG and timing jitter
+fig_input=figure('Color','w','Position',[100 100 1200 420]);
+input_layout=tiledlayout(fig_input,1,2,'TileSpacing','compact','Padding','compact');
+ax=nexttile(input_layout); imagesc(ax,1000*times,1:toy.n_channels,reshape(data(1,:,:),toy.n_channels,[]));
+axis(ax,'xy'); xlim(ax,[-20 200]); colorbar(ax);
+xlabel(ax,'Time from trigger (ms)'); ylabel(ax,'Channel'); title(ax,'Observed EEG: epoch 1 (a.u.)');
+ax=nexttile(input_layout); hold(ax,'on');
+for c=1:toy.n_channels
+ plot(ax,1:toy.n_epochs,1000*metadata.artifact_onsets_s(:,c),'.','Color',grey,'HandleVisibility','off');
+end
+plot(ax,1:toy.n_epochs,1000*mean(metadata.artifact_onsets_s,2),'-o','Color',blue,'DisplayName','Mean across channels');
+yline(ax,3,':','Color',[.4 .4 .4],'DisplayName','Nominal onset: 3 ms');
+xlabel(ax,'Stimulus / epoch'); ylabel(ax,'Residual artifact onset (ms)');
+title(ax,'Stimulus jitter + channel latency');
+jitter_legend=legend(ax,'Orientation','horizontal','FontSize',9,'Box','off');
+jitter_legend.Layout.Tile='south';
+
+%% 5. Continue the host pipeline
+% Replace data/times with real preprocessed epochs; keep matching good EEG
+% channels in MATLAB and Python because screening depends on that population.
+% Gaussian filling remains enabled; inspect diagnostics, then continue ICA.
+data_for_ica=corrected;

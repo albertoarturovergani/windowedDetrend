@@ -1,7 +1,8 @@
 # Offset filling after windowed detrending
 
-The default workflow is **Lagrange rise, cubic decay, automatic peak detection,
-then Gaussian filling**. The core does not change the epoch's sampling rate.
+The default workflow follows the [published TEP notebook](TEP_ALIGNMENT.md):
+quadratic pre fit, Lagrange rise and free cubic/quadratic decay according to
+channel screening, followed by Gaussian filling when windowed detrending runs. The core does not change the epoch's sampling rate.
 Filling replaces the unreliable interval; it does not reconstruct its neural
 activity. The default Gaussian rule follows TMSpathPipeline's
 `apply_offset_correction` and `generate_noise_from_distribution`.
@@ -30,8 +31,8 @@ cfg.fill_seed = 42;
 [corrected, trend, diagnostics] = tmspath_detrend(data, times, cfg);
 ```
 
-The library's default search end remains 0.100 s; the interactive demos use
-0.030 s to illustrate a user-selected window. Search starts at `onset_s` and
+The library and interactive multichannel demos use onset/search end 0 / 0.020 s;
+the 0.010 / 0.030 s settings above illustrate a user-selected window. Search starts at `onset_s` and
 ends at the smaller of `peak_search_end_s` and `end_s`. It finds the largest
 absolute **observed** amplitude, which may differ from the true artifact peak.
 Inspect the detected split. Set `peak_s` explicitly to override detection.
@@ -48,14 +49,14 @@ Filling works with windowed fits. The optional global comparator requires
 
 ## Source and target intervals
 
-The rise is `onset_s <= times < detected_or_supplied_peak`. The replacement
+The rise is `onset_s <= times <= detected_or_supplied_peak`. The replacement
 interval extends from the **first sampled rise time minus the margin** to the
 **last sampled rise time plus the margin**, inclusive and clipped to the epoch.
 It can therefore replace pre-onset and post-peak samples, including samples
 beyond `end_s` when the margin reaches them. This matches the pipeline's mask
 construction, rather than silently clipping the fill to the fitted interval.
 
-The source is the original signal before `onset_s`, ending at its last sample
+The source is the original signal through `onset_s` (inclusive), ending at its last sample
 minus the same margin. If trimming would leave it empty, all pre-onset samples
 are used, matching the pipeline. The source is taken **before detrending or
 filling**, independently for each epoch/channel. It is not automatically
@@ -117,15 +118,16 @@ so their saved results remain reproducible. They test detrending before fill.
   contain `mean`, `std`, `seed` and RNG description (MATLAB also `trace_seed`).
 - Indices are zero-based in Python and one-based in MATLAB. Fit coefficients,
   taus and segment `residual_mse` describe the fit **before replacement**.
-- Unselected channels are unchanged. Outside the union of fitting and filling
-  intervals, samples are unchanged (unless optional pre-onset detrending is on).
+- Unselected channels are unchanged. The default pre-onset quadratic fit also
+  changes pre samples. If screening finds no offsets, whole-epoch linear
+  detrending runs without filling, as in the notebook.
 
 ## Demos and validation
 
-The notebook and Live Script use automatic peak detection and explicitly set
-`fill_mode='none'` to demonstrate detrending without filling. For experimental
-recordings, set `fill_mode='gaussian'` to enable random replacement of the
-zeroed interval. The library default remains Gaussian filling. The original
+The notebook and Live Script use automatic peak detection and keep
+`fill_mode='gaussian'`, matching the library default. Both replace the zeroed
+rise plus margin with Gaussian noise. Native random samples differ across
+languages; replacement masks and distribution parameters agree. The original
 no-background toy remains available as `toy_post_epoching.py` / `.m`.
 
 Run the Python tests and generate compact shared fixtures:
@@ -149,3 +151,10 @@ suite covers Gaussian and resampled filling, manual/off-sample/automatic
 peaks, source fallback, selected channels, pre-onset fits, and 144 Fourier
 length/signal combinations. Reports are in `results/filling_validation`.
 Generated waveform fixtures are excluded from Git. No real EEG is included.
+
+## Full TEP comparison
+
+The helper-level tests above use aligned pipeline-style masks. The separate
+[TEP suite](TEP_ALIGNMENT.md) additionally runs the original mask builder,
+slope screening and complete computeDetrend_v6; its masks are not supplied
+from plugin results. Gaussian draws in MATLAB remain intentionally independent.

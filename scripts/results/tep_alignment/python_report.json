@@ -1,0 +1,232 @@
+{
+  "passed": true,
+  "reference_commit": "534e926e659885d97bd873a7a31efbac17ebdd96",
+  "verified_windowed_constraint": false,
+  "cases": 12,
+  "offset_trace_fits": 20,
+  "non_offset_trace_fits": 90,
+  "max_python_pipeline_output_difference": 0.002714846171372187,
+  "max_difference_outside_lagrange_rise": 1.7763568394002505e-13,
+  "max_slope_difference": 9.094947017729282e-13,
+  "max_mean_z_difference": 4.440892098500626e-16,
+  "max_fill_difference": 8.326672684688674e-17,
+  "original_warning_count": 90,
+  "details": [
+    {
+      "name": "auto_1000_none",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 0.002714846171372187,
+      "max_difference_outside_rise": 9.947598300641403e-14,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "auto_1000_gaussian",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 9.947598300641403e-14,
+      "max_difference_outside_rise": 9.947598300641403e-14,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "auto_1000_resample",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 9.947598300641403e-14,
+      "max_difference_outside_rise": 9.947598300641403e-14,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "auto_1024_none",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 0.0016872911836816051,
+      "max_difference_outside_rise": 1.6342482922482304e-13,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "auto_1024_gaussian",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 1.6342482922482304e-13,
+      "max_difference_outside_rise": 1.6342482922482304e-13,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "auto_1024_resample",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 1.6342482922482304e-13,
+      "max_difference_outside_rise": 1.6342482922482304e-13,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "manual_constrained_none",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 0.0016872911836816051,
+      "max_difference_outside_rise": 1.7763568394002505e-13,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "manual_constrained_gaussian",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 1.7763568394002505e-13,
+      "max_difference_outside_rise": 1.7763568394002505e-13,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "manual_constrained_resample",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 1.7763568394002505e-13,
+      "max_difference_outside_rise": 1.7763568394002505e-13,
+      "original_warnings": [
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned",
+        "Polyfit may be poorly conditioned"
+      ]
+    },
+    {
+      "name": "offset_channels_only",
+      "offset_channels": [
+        0
+      ],
+      "operation": "windowed",
+      "max_output_difference": 9.947598300641403e-14,
+      "max_difference_outside_rise": 9.947598300641403e-14,
+      "original_warnings": []
+    },
+    {
+      "name": "no_offsets_overall",
+      "offset_channels": [],
+      "operation": "overall",
+      "max_output_difference": 8.881784197001252e-16,
+      "max_difference_outside_rise": 8.881784197001252e-16,
+      "original_warnings": []
+    },
+    {
+      "name": "no_offsets_preserve",
+      "offset_channels": [],
+      "operation": "none",
+      "max_output_difference": 0.0,
+      "max_difference_outside_rise": 0.0,
+      "original_warnings": []
+    }
+  ],
+  "scope": "Original TEP masks, slope screening, per-channel polynomial degrees, full computeDetrend_v6, both constraint settings, Gaussian/resample filling and no-offset overall fallback. Without filling, report the original ill-conditioned Lagrange residual separately; with filling, compare the complete output. Synthetic inputs; excludes preprocessing/ICA and real-EEG validation."
+}

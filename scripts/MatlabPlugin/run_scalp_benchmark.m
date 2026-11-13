@@ -35,6 +35,7 @@ for i=1:numel(manifest)
   cfg=configs.(methods{m}); cfg.peak_s=S.peak_s;
   % Saved historical fixtures measure detrending before any offset filling.
   if ~isfield(cfg,'fill_mode'), cfg.fill_mode='none'; end
+  if ~isfield(cfg,'mask_convention'), cfg.mask_convention='figure'; cfg.channel_policy='all'; end
   clean=tmspath_detrend(S.data,t,cfg);
   assert(all(isfinite(clean(:))),'Nonfinite MATLAB output');
   recovered(m,:,:)=clean;

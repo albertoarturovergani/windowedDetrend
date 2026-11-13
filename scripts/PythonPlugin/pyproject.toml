@@ -17,6 +17,7 @@ classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Pytho
 
 [project.optional-dependencies]
 benchmark = ["scipy>=1.10", "matplotlib>=3.7"]
+validation = ["scipy>=1.10", "pandas>=2.0"]
 mne = ["mne>=1.6"]
 dev = ["build>=1", "twine>=5"]
 

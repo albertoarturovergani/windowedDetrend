@@ -9,17 +9,17 @@ decay = times >= 0.015;
 artifact(decay) = -100 * (1-exp(-0.005/0.003)) * exp(-(times(decay)-0.015)/0.200);
 data = reshape(neural + artifact, 1, 1, []);  % epochs x channels x samples
 
-cfg = tmspath_config(); cfg.fill_mode='none';
+cfg = tmspath_config(); cfg.channel_policy='all'; cfg.fill_mode='none';
 cfg.onset_s = 0.010; cfg.peak_s = 0.015; cfg.end_s = times(end);
 cfg.rise_model = 'lagrange'; cfg.decay_model = 'poly';
 cfg.rise_degree = 3; cfg.decay_degree = 3;
-cfg.constrain_rise = false; cfg.constrain_decay = true; cfg.pre_degree = [];
+cfg.constrain_rise = false; cfg.constrain_decay = false; cfg.pre_degree = 2;
 [corrected, trend, diagnostics] = tmspath_detrend(data, times, cfg);
 mask = times >= cfg.onset_s;
 recovered = reshape(corrected, [], 1);
 mse = mean((recovered(mask) - neural(mask)).^2);
 assert(isequal(size(corrected), size(data)));
-assert(isequal(corrected(:,:,~mask), data(:,:,~mask)));
+assert(max(abs(corrected(:)+trend(:)-data(:)))<1e-12);
 fprintf('Toy recovery MSE: %.6f a.u.^2\n', mse);
 
 out = fullfile(pwd, 'images'); if ~exist(out,'dir'), mkdir(out); end
@@ -30,7 +30,7 @@ plot(times*1000, reshape(data,[],1), 'DisplayName','Input: neural + slow artifac
 plot(times*1000, reshape(trend,[],1), '--', 'DisplayName','Estimated trend');
 ax2 = nexttile(tl);
 plot(times*1000, neural, 'k', 'DisplayName','Known toy neural signal'); hold on;
-plot(times*1000, recovered, 'DisplayName','Detrended; input to subsequent ICA');
+plot(times*1000, recovered, 'DisplayName','Polynomial');
 for ax = [ax1 ax2]
     xline(ax,10,':','DisplayName','Detrend onset: 10 ms');
     ylabel(ax,'Amplitude (a.u.)'); xlim(ax,[-20 250]); legend(ax,'Location','best');

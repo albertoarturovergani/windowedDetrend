@@ -13,21 +13,57 @@ assert(all(isfinite(data(:))) && all(isfinite(t)) && all(diff(t)>0),'Finite inpu
 finish=cfg.end_s; if isempty(finish), finish=t(end); end
 assert(t(1)<=cfg.onset_s && cfg.onset_s<finish && finish<=t(end)+1e-12,'Invalid correction interval');
 assert(ismember(cfg.mode,{'windowed','global'}),'Invalid mode');
+assert(ismember(cfg.mask_convention,{'pipeline','figure'}),'Invalid mask_convention');
+assert(ismember(cfg.channel_policy,{'auto','all','manual'}),'Invalid channel_policy');
+assert(isscalar(cfg.slope_threshold) && isfinite(cfg.slope_threshold) && cfg.slope_threshold>=0,'Invalid slope_threshold');
 assert(ismember(cfg.fill_mode,{'none','gaussian','resample'}),'Invalid fill_mode');
 assert(isscalar(cfg.fill_margin_s) && isfinite(cfg.fill_margin_s) && cfg.fill_margin_s>=0,'Invalid fill_margin_s');
 assert(isscalar(cfg.fill_seed) && isfinite(cfg.fill_seed) && cfg.fill_seed==fix(cfg.fill_seed) && cfg.fill_seed>=0 && cfg.fill_seed<=2^32-1,'Invalid fill_seed');
 assert(strcmp(cfg.fill_mode,'none') || strcmp(cfg.mode,'windowed'),'Optional filling requires windowed mode');
 assert(cfg.tau_min_s>0 && cfg.tau_max_s>cfg.tau_min_s && cfg.grid_size>=3 && cfg.refinements>=0,'Invalid search parameters');
 assert(cfg.grid_size==fix(cfg.grid_size) && cfg.refinements==fix(cfg.refinements),'Grid counts must be integers');
-for d=[cfg.rise_degree cfg.decay_degree cfg.pre_degree], assert(d>=0 && d==fix(d),'Invalid degree'); end
+for d=[cfg.rise_degree cfg.decay_degree cfg.pre_degree cfg.overall_degree], assert(d>=0 && d==fix(d),'Invalid degree'); end
 channels=cfg.channels; if isempty(channels), channels=1:size(data,2); end
 assert(numel(unique(channels))==numel(channels) && all(channels>=1 & channels<=size(data,2) & channels==fix(channels)),'Invalid channels');
+assert(numel(unique(cfg.offset_channels))==numel(cfg.offset_channels) && all(cfg.offset_channels>=1 & cfg.offset_channels<=size(data,2) & cfg.offset_channels==fix(cfg.offset_channels)),'Invalid offset_channels');
 trend=zeros(size(data)); records={};
+if strcmp(cfg.mode,'windowed')
+ selection=tmspath_select_offset_channels(data,t,channels,cfg);
+else
+ selection=struct('policy','global','offset_channels',channels,'found_offsets',true);
+end
+offsets=selection.offset_channels;
+if strcmp(cfg.mode,'windowed') && ~selection.found_offsets
+ operation='none';
+ if ~isempty(cfg.overall_degree)
+  operation='overall';
+  for e=1:size(data,1)
+   for c=channels(:)'
+    [z,detail]=fit_segment(t-t(1),reshape(data(e,c,:),[],1),'poly',cfg.overall_degree,cfg,[]);
+    trend(e,c,:)=reshape(z,1,1,[]);
+    records{end+1}=struct('epoch',e,'channel',c,'overall',detail); %#ok<AGROW>
+   end
+  end
+ end
+ cleaned=data-trend;
+ info=struct('config',cfg,'fits',{records},'operation',operation,'channel_selection',selection);
+ return;
+end
+if strcmp(cfg.mode,'windowed') && cfg.only_offset_channels
+ channels=channels(ismember(channels,offsets));
+end
 for e=1:size(data,1)
  for c=channels(:)'
   y=reshape(data(e,c,:),[],1); z=zeros(size(t)); rec=struct('epoch',e,'channel',c);
+  if strcmp(cfg.mode,'windowed')
+   [pre,rise,decay,peak]=tmspath_time_masks(t,y,cfg);
+  elseif strcmp(cfg.mask_convention,'pipeline')
+   pre=t<=cfg.onset_s;
+  else
+   pre=t<cfg.onset_s;
+  end
   if ~isempty(cfg.pre_degree)
-   mask=t<cfg.onset_s;
+   mask=pre; assert(any(mask),'Pre-onset fit requires source samples');
    [z(mask),rec.pre]=fit_segment(t(mask)-t(find(mask,1)),y(mask),'poly',cfg.pre_degree,cfg,[]);
   end
   anchor=[]; if cfg.constrain_rise, anchor=0; end
@@ -35,20 +71,20 @@ for e=1:size(data,1)
    mask=t>=cfg.onset_s & t<=finish;
    [z(mask),rec.global]=fit_segment(t(mask)-cfg.onset_s,y(mask),cfg.global_model,cfg.decay_degree,cfg,anchor);
   else
-   peak=cfg.peak_s;
-   if isempty(peak)
-    ids=find(t>=cfg.onset_s & t<=min(cfg.peak_search_end_s,finish));
-    assert(~isempty(ids),'Empty peak search interval');
-    [~,k]=max(abs(y(ids))); peak=t(ids(k));
-   end
-   assert(cfg.onset_s<peak && peak<finish,'Peak must lie inside correction interval');
-   rise=t>=cfg.onset_s & t<peak; decay=t>=peak & t<=finish;
    [z(rise),rec.rise]=fit_segment(t(rise)-cfg.onset_s,y(rise),cfg.rise_model,cfg.rise_degree,cfg,anchor);
    anchor=[]; if cfg.constrain_decay, anchor=interp1(t,y,peak); end
-   [z(decay),rec.decay]=fit_segment(t(decay)-peak,y(decay),cfg.decay_model,cfg.decay_degree,cfg,anchor);
+   degree=cfg.decay_degree;
+   if ~ismember(c,offsets), degree=max(0,degree-1); end
+   [z(decay),rec.decay]=fit_segment(t(decay)-peak,y(decay),cfg.decay_model,degree,cfg,anchor);
    rec.peak_s=peak;
+   rec.is_offset_channel=ismember(c,offsets);
+   windows={pre,rise,decay}; labels={'pre','rise','decay'};
+   for k=1:3
+    ids=find(windows{k});
+    if ~isempty(ids), rec.windows.(labels{k})=struct('first',ids(1),'last',ids(end),'count',numel(ids)); end
+   end
    if ~strcmp(cfg.fill_mode,'none')
-    rec.fill=tmspath_fill_offset(y,t,cfg.onset_s,peak,cfg.fill_margin_s,cfg.fill_mode,cfg.fill_seed,e,c);
+    rec.fill=tmspath_fill_offset(y,t,cfg.onset_s,peak,cfg.fill_margin_s,cfg.fill_mode,cfg.fill_seed,e,c,cfg.mask_convention);
    end
   end
   trend(e,c,:)=reshape(z,1,1,[]); records{end+1}=rec; %#ok<AGROW>
@@ -62,12 +98,12 @@ for k=1:numel(records)
   cleaned(rec.epoch,rec.channel,fill.target_first:fill.target_last)=reshape(fill.values,1,1,[]);
  end
 end
-info=struct('config',cfg,'fits',{records});
+info=struct('config',cfg,'fits',{records},'operation',cfg.mode,'channel_selection',selection);
 end
 
 function [fit,info]=fit_segment(x,y,model,degree,cfg,anchor)
 if strcmp(model,'lagrange')
- assert(numel(x)>=2 && all(diff(x)>0),'Lagrange requires at least two distinct increasing nodes');
+ assert(numel(x)>=1 && all(diff(x)>0),'Lagrange requires distinct increasing nodes');
  assert(isempty(anchor),'Lagrange uses observed nodes; disable the start constraint');
  % The Lagrange interpolant equals the observed signal at every input node.
  % No high-degree Vandermonde solve is needed for evaluation at those nodes.
@@ -131,7 +167,8 @@ for level=0:levels
   lo=max(bounds(1),center-step); hi=min(bounds(2),center+step);
  end
 end
-info=struct('model',model,'tau_s',bestTheta,'coefficients',bestCoef, ...
+polynomial_degree=[]; if strcmp(model,'poly'), polynomial_degree=degree; end
+info=struct('model',model,'degree',polynomial_degree,'tau_s',bestTheta,'coefficients',bestCoef, ...
  'residual_mse',best,'anchor',anchor,'scale_s',scale, ...
  'tau_at_bound',any(abs(bestTheta-cfg.tau_min_s)<1e-8+1e-5*cfg.tau_min_s) || any(abs(bestTheta-cfg.tau_max_s)<1e-8+1e-5*cfg.tau_max_s));
 end

@@ -1,1 +1,69 @@
-{"passed":true,"method":"Polynomial","polynomial_mse":1.0137524360764762,"fill_mode":"none","detected_peak_s":0.0236}
+{
+  "passed": true,
+  "method": "Polynomial",
+  "demo": "multichannel EEG with timing and amplitude jitter",
+  "shape": [
+    12,
+    16,
+    700
+  ],
+  "polynomial_mse": 0.24772820129525377,
+  "fill_mode": "gaussian",
+  "channel_policy": "auto",
+  "slope_threshold": 0.5,
+  "nondefault_config_fields": [],
+  "offset_channel_labels": [
+    "EEG01",
+    "EEG02"
+  ],
+  "sweep_thresholds": [
+    0.25,
+    0.5,
+    1,
+    2,
+    3
+  ],
+  "sweep_counts": [
+    16,
+    2,
+    2,
+    2,
+    0
+  ],
+  "sweep_operations": [
+    "windowed",
+    "windowed",
+    "windowed",
+    "windowed",
+    "overall"
+  ],
+  "sweep_mse": [
+    0.2500317809016195,
+    0.24772820129525377,
+    0.24772820129525377,
+    0.24772820129525377,
+    50.10503003603619
+  ],
+  "cross_language_max_difference": {
+    "data": 1.4210854715202004e-14,
+    "times": 0.0,
+    "truth": 8.881784197001252e-16,
+    "artifact": 1.4210854715202004e-14,
+    "trend": 1.3145040611561853e-13,
+    "scores": 1.6653345369377348e-16,
+    "sweep_thresholds": 0.0,
+    "sweep_counts": 0.0,
+    "stimulus_jitter_s": 0.0,
+    "channel_jitter_s": 0.0,
+    "artifact_onsets_s": 0.0,
+    "artifact_peaks_s": 0.0,
+    "artifact_gains": 0.0,
+    "fill_mask": 0.0,
+    "fill_bounds": 0.0,
+    "fill_parameters": 5.0306980803327406e-17,
+    "mean_z": 8.881784197001252e-16,
+    "corrected_outside_gaussian_fill": 1.3145040611561853e-13
+  },
+  "gaussian_comparison": "Same masks and source mean/SD; independent native random draws. Corrected samples inside Gaussian replacement and resulting MSE are not required to match.",
+  "filled_traces": 192
+}

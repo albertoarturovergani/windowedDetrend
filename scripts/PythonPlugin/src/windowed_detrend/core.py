@@ -7,22 +7,23 @@ from dataclasses import dataclass, asdict
 from itertools import product
 import numpy as np
 from .filling import fill_offset
+from .segmentation import time_masks, select_offset_channels
 
 @dataclass
 class Config:
     mode: str = 'windowed'
-    onset_s: float = 0.010
+    onset_s: float = 0.0
     peak_s: float | None = None
-    peak_search_end_s: float = 0.100
+    peak_search_end_s: float = 0.020
     end_s: float | None = None
     rise_model: str = 'lagrange'
     decay_model: str = 'poly'
     global_model: str = 'biexp'
     rise_degree: int = 3
     decay_degree: int = 3
-    pre_degree: int | None = None
+    pre_degree: int | None = 2
     constrain_rise: bool = False
-    constrain_decay: bool = True
+    constrain_decay: bool = False
     fit_offset: bool = False
     tau_min_s: float = 0.0005
     tau_max_s: float = 1.0
@@ -32,6 +33,20 @@ class Config:
     fill_mode: str = 'gaussian'
     fill_margin_s: float = 0.005
     fill_seed: int = 42
+    mask_convention: str = 'pipeline'
+    channel_policy: str = 'auto'
+    offset_channels: tuple = ()
+    slope_threshold: float = 0.5
+    only_offset_channels: bool = False
+    overall_degree: int | None = 1
+
+    @classmethod
+    def figure_defaults(cls, **overrides):
+        """Explicit pre-alignment settings for historical figures/benchmarks."""
+        values = dict(onset_s=.010, peak_search_end_s=.100, pre_degree=None,
+                      constrain_decay=True, mask_convention='figure', channel_policy='all',
+                      fill_mode='none', overall_degree=None)
+        return cls(**{**values, **overrides})
 
 
 def _basis(x, model, theta, degree, scale):
@@ -50,8 +65,8 @@ def fit_segment(x, y, model, degree, cfg, anchor=None):
     anchor is trend value at x=0; it is not a neural ground truth sample.
     """
     if model == 'lagrange':
-        if len(x) < 2 or np.any(np.diff(x) <= 0):
-            raise ValueError('Lagrange interpolation requires at least two distinct increasing nodes')
+        if len(x) < 1 or np.any(np.diff(x) <= 0):
+            raise ValueError('Lagrange interpolation requires distinct increasing nodes')
         if anchor is not None:
             raise ValueError('Lagrange interpolation uses observed nodes; disable the start constraint')
         # P(x_i)=y_i exactly. We only evaluate at the original nodes, so no
@@ -107,7 +122,8 @@ def fit_segment(x, y, model, degree, cfg, anchor=None):
             step = (hi-lo)/((cfg.grid_size if level == 0 else 7)-1)
             center = np.log(best[3]); lo = np.maximum(bounds[0], center-step); hi=np.minimum(bounds[1],center+step)
     mse, fit, coef, theta = best
-    return fit, dict(model=model, tau_s=theta.tolist(), coefficients=coef.tolist(),
+    return fit, dict(model=model, degree=degree if model=='poly' else None,
+                     tau_s=theta.tolist(), coefficients=coef.tolist(),
                      residual_mse=mse, anchor=anchor, scale_s=scale,
                      tau_at_bound=bool(np.any(np.isclose(theta,cfg.tau_min_s)) or np.any(np.isclose(theta,cfg.tau_max_s))))
 
@@ -128,6 +144,10 @@ def detrend(data, times, config=None):
     end=t[-1] if cfg.end_s is None else cfg.end_s
     if not t[0] <= cfg.onset_s < end <= t[-1]+1e-12: raise ValueError('Invalid correction interval')
     if cfg.mode not in ('windowed','global'): raise ValueError('Invalid mode')
+    if cfg.mask_convention not in ('pipeline','figure'): raise ValueError('Invalid mask_convention')
+    if cfg.channel_policy not in ('auto','all','manual'): raise ValueError('Invalid channel_policy')
+    if not np.isfinite(cfg.slope_threshold) or cfg.slope_threshold < 0:
+        raise ValueError('slope_threshold must be finite and nonnegative')
     if cfg.fill_mode not in ('none', 'gaussian', 'resample'): raise ValueError('Invalid fill_mode')
     if not np.isfinite(cfg.fill_margin_s) or cfg.fill_margin_s < 0:
         raise ValueError('fill_margin_s must be finite and nonnegative')
@@ -138,43 +158,62 @@ def detrend(data, times, config=None):
     if not 0<cfg.tau_min_s<cfg.tau_max_s or cfg.grid_size<3 or cfg.refinements<0:
         raise ValueError('Invalid tau search configuration')
     if cfg.grid_size != int(cfg.grid_size) or cfg.refinements != int(cfg.refinements): raise ValueError('Grid counts must be integers')
-    for degree in (cfg.rise_degree,cfg.decay_degree,cfg.pre_degree):
+    for degree in (cfg.rise_degree,cfg.decay_degree,cfg.pre_degree,cfg.overall_degree):
         if degree is not None and (degree<0 or degree!=int(degree)): raise ValueError('Invalid degree')
     channels=list(range(y.shape[1])) if cfg.channels is None else list(cfg.channels)
     if len(set(channels))!=len(channels) or any(not isinstance(c,(int,np.integer)) or c<0 or c>=y.shape[1] for c in channels):
         raise ValueError('Invalid channel indices')
+    if len(set(cfg.offset_channels))!=len(cfg.offset_channels) or any(not isinstance(c,(int,np.integer)) or c<0 or c>=y.shape[1] for c in cfg.offset_channels):
+        raise ValueError('Invalid offset_channels')
     trend=np.zeros_like(y); records=[]
+    if not channels:
+        return y.copy(),trend,dict(config=asdict(cfg),fits=[],operation='none',channel_selection={})
+    selection = select_offset_channels(y,t,channels,cfg) if cfg.mode=='windowed' else dict(offset_channels=channels,found_offsets=True,policy='global')
+    offsets = selection['offset_channels']
+    if cfg.mode=='windowed' and not selection['found_offsets']:
+        # The notebook uses detrend_overall=True / detrend_noWindowedOrder=1
+        # when screening disables windowed detrending. No gap is filled here.
+        if cfg.overall_degree is not None:
+            for e in range(y.shape[0]):
+                for c in channels:
+                    trend[e,c],detail=fit_segment(t-t[0],y[e,c],'poly',cfg.overall_degree,cfg)
+                    records.append(dict(epoch=e,channel=c,overall=detail))
+        return y-trend,trend,dict(config=asdict(cfg),fits=records,channel_selection=selection,
+                                  operation='overall' if cfg.overall_degree is not None else 'none')
+    if cfg.mode=='windowed' and cfg.only_offset_channels:
+        channels=[c for c in channels if c in offsets]
     for e in range(y.shape[0]):
         for c in channels:
             sig=y[e,c]; rec=dict(epoch=e,channel=c)
+            if cfg.mode=='windowed':
+                pre,rise,decay,peak=time_masks(t,sig,cfg)
+            else:
+                pre=t<=cfg.onset_s if cfg.mask_convention=='pipeline' else t<cfg.onset_s
             if cfg.pre_degree is not None:
-                pre=t<cfg.onset_s
+                if not np.any(pre): raise ValueError('Pre-onset fit requires source samples')
                 trend[e,c,pre],rec['pre']=fit_segment(t[pre]-t[pre][0],sig[pre],'poly',cfg.pre_degree,cfg)
             if cfg.mode=='global':
                 mask=(t>=cfg.onset_s)&(t<=end)
                 trend[e,c,mask],rec['global']=fit_segment(t[mask]-cfg.onset_s,sig[mask],cfg.global_model,cfg.decay_degree,cfg,0. if cfg.constrain_rise else None)
             else:
-                if cfg.peak_s is None:
-                    search=np.flatnonzero((t>=cfg.onset_s)&(t<=min(cfg.peak_search_end_s,end)))
-                    if not len(search): raise ValueError('Empty peak search interval')
-                    peak=t[search[np.argmax(np.abs(sig[search]))]]
-                else: peak=cfg.peak_s
-                if not cfg.onset_s<peak<end: raise ValueError('Peak must be strictly inside correction interval')
-                rise=(t>=cfg.onset_s)&(t<peak); decay=(t>=peak)&(t<=end)
                 trend[e,c,rise],rec['rise']=fit_segment(t[rise]-cfg.onset_s,sig[rise],cfg.rise_model,cfg.rise_degree,cfg,0. if cfg.constrain_rise else None)
                 anchor=float(np.interp(peak,t,sig)) if cfg.constrain_decay else None
-                trend[e,c,decay],rec['decay']=fit_segment(t[decay]-peak,sig[decay],cfg.decay_model,cfg.decay_degree,cfg,anchor)
+                degree=cfg.decay_degree if c in offsets else max(0,cfg.decay_degree-1)
+                trend[e,c,decay],rec['decay']=fit_segment(t[decay]-peak,sig[decay],cfg.decay_model,degree,cfg,anchor)
                 rec['peak_s']=float(peak)
+                rec['is_offset_channel']=c in offsets
+                rec['windows']={name:dict(first=int(np.flatnonzero(mask)[0]),last=int(np.flatnonzero(mask)[-1]),count=int(mask.sum()))
+                                for name,mask in zip(('pre','rise','decay'),(pre,rise,decay)) if np.any(mask)}
                 if cfg.fill_mode != 'none':
                     rec['fill'] = fill_offset(sig, t, cfg.onset_s, peak, cfg.fill_margin_s,
-                                              cfg.fill_mode, cfg.fill_seed, e, c)
+                                              cfg.fill_mode, cfg.fill_seed, e, c,cfg.mask_convention)
             records.append(rec)
     cleaned = y-trend
     for rec in records:
         if 'fill' in rec:
             fill = rec['fill']
             cleaned[rec['epoch'], rec['channel'], fill['target_first']:fill['target_last']+1] = fill['values']
-    return cleaned,trend,dict(config=asdict(cfg),fits=records)
+    return cleaned,trend,dict(config=asdict(cfg),fits=records,operation=cfg.mode,channel_selection=selection)
 
 
 def detrend_mne(epochs, config=None, picks=None):

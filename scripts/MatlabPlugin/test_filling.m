@@ -2,7 +2,8 @@ function test_filling()
 % Base-MATLAB checks for optional filling and Fourier/Nyquist conventions.
 t=(-200:500)'/2000; b=.7*sin(2*pi*11*t)+.2*cos(2*pi*23*t);
 data=zeros(1,2,numel(t)); data(1,1,:)=b; data(1,2,:)=2*b+1;
-cfg=tmspath_config();cfg.fill_mode='none'; cfg.peak_s=.015; cfg.channels=1;
+cfg=tmspath_config();cfg.fill_mode='none'; cfg.onset_s=.010;cfg.peak_s=.015; cfg.channels=1;
+cfg.channel_policy='all';cfg.pre_degree=[];
 [raw,rawTrend]=tmspath_detrend(data,t,cfg);
 cfg.fill_mode='resample'; [filled,trend,info]=tmspath_detrend(data,t,cfg);
 f=info.fits{1}.fill; expected=raw;
@@ -30,7 +31,8 @@ failed=false; try, tmspath_detrend(data,t,cfg); catch, failed=true; end; assert(
 cfg.fill_margin_s=.005; cfg.mode='global';
 failed=false; try, tmspath_detrend(data,t,cfg); catch, failed=true; end; assert(failed);
 fprintf('MATLAB optional filling tests passed.\n');
-cfg=tmspath_config(); assert(strcmp(cfg.fill_mode,'gaussian')); cfg.peak_s=.015;
+cfg=tmspath_config(); assert(strcmp(cfg.fill_mode,'gaussian')); cfg.onset_s=.010;cfg.peak_s=.015;
+cfg.channel_policy='all';cfg.pre_degree=[];
 global_rng=rng;
 [a,~,ai]=tmspath_detrend(data,t,cfg); [b,~,~]=tmspath_detrend(data,t,cfg);
 assert(isequal(a,b) && isequal(rng,global_rng));

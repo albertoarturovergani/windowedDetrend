@@ -4,23 +4,39 @@ Standalone post-epoching TMS-EEG plugin, local development version 0.1.0.
 Requires MATLAB R2023a+ for packaging; tested with R2023b. No Optimization,
 Signal Processing, or Statistics toolbox is required by the core.
 
+## Controls to adjust first
+
+1. **`slope_threshold=0.5`**: the main decision parameter for recognizing
+   channels with extreme artifacts and choosing the detrending strategy.
+   A channel is classified as extreme when its slope score reaches or exceeds
+   this threshold. Lower values identify more channels; higher values fewer.
+2. **`onset_s=0`, `peak_search_end_s=0.020`**: peak search window in seconds.
+   The peak divides rise/decay; slope screening uses pre, rise and decay.
+3. **Pre degree 2 / Lagrange rise / decay degree 3**: keep these defaults.
+   Other processed channels use degree 2 in decay. Lagrange degree is N-1;
+   `rise_degree` does not change it. Decay is unconstrained by default.
+
+With auto screening, a threshold higher than every channel score selects the
+**basic, whole-epoch linear detrend**, without Lagrange zeroing or gap filling.
+If at least one channel reaches the threshold, **windowed detrending** runs on
+all selected channels by default, including those below threshold. The score
+is the largest absolute epoch-mean standardized slope across pre/rise/decay;
+equality counts as extreme (`>=`). See the
+[threshold guide and demo outcomes](../../README.md#start-with-these-three-controls).
+
 ```matlab
 addpath('path/to/MatlabPlugin')
 cfg = tmspath_config();
-cfg.onset_s = 0.010;
-cfg.peak_s = 0.015; % []: detect maximum absolute amplitude in search interval
-cfg.rise_model = 'lagrange'; cfg.decay_model = 'poly';
-cfg.rise_degree = 3; cfg.decay_degree = 3;
-cfg.constrain_rise = false;
+cfg.slope_threshold = 0.5;
+cfg.onset_s = 0.0; cfg.peak_search_end_s = 0.020; % Choose for your recording.
 [cleaned, artifact, diagnostics] = tmspath_detrend(data, times, cfg);
 ```
 
 `data` is **epochs x channels x samples**, times in **seconds**. Amplitude units
 are preserved. `cfg.channels` uses MATLAB 1-based indices; empty means all.
 Set selected EEG channels explicitly if EOG or other channel types are present.
-`cfg.end_s` limits the correction window; `cfg.pre_degree=[]` preserves baseline.
-`cfg.constrain_decay=true` anchors to the observed value at the split, including
-neural activity; this can bias recovery. See PAPER_ALIGNMENT.md.
+`cfg.end_s` limits the decay fit. The default quadratic pre-onset fit is disabled with `cfg.pre_degree=[]`.
+The default `cfg.constrain_decay=false` matches the Windowed TEP notebook; true optionally anchors to the observed peak.
 
 For an already epoched EEGLAB structure (channels x samples x trials, ms):
 
@@ -33,19 +49,16 @@ No filtering, epoching or ICA is performed. For experimental recordings, see the
 
 ## Interactive Live Script
 
-The default exponential search uses `cfg.refinements=5` (previously 3) and
-`cfg.grid_size=21`. This improves tau search resolution with additional
-computation; Lagrange and polynomial fits are unaffected.
-
 Open [demo_windowed_detrend.mlx](demo_windowed_detrend.mlx) in MATLAB and select
 **Run All**. It locates the plugin in its own directory and requires no
-installation. Edit sections A (toy generation) and B (detrending) at the
-beginning; comments explain all parameters and alternative options. It needs no
-additional toolbox. The sections generate the toy signal,
+installation. Edit section A (threshold, windows, models), then B (synthetic EEG) if needed;
+advanced settings retain their defaults. It needs no
+additional toolbox. The sections generate 16-channel, 12-stimulus EEG with timing/amplitude jitter,
 call `tmspath_detrend`, check the output, calculate recovery MSE and plot the
 results. The recovered curve is labelled **Polynomial**.
-The demo uses Lagrange rise interpolation, cubic decay and no filling. It detects
-the peak in a user-configurable search window. Lagrange subtraction zeroes the rise window,
+The demo uses automatic screening, quadratic pre, Lagrange rise, free cubic/quadratic
+decay and Gaussian filling. A threshold sweep shows the switch to whole-epoch linear
+detrending when no channels are flagged. Peak search defaults to 0-20 ms. Lagrange subtraction zeroes the rise window,
 including any neural activity there.
 
 ```matlab
@@ -114,11 +127,11 @@ The historical SciPy notebook comparator remains Python-only.
 
 ## Current defaults
 
-Windowed polynomial detrending: `rise_model=lagrange`, `decay_model=poly`, `decay_degree=3`, `constrain_rise=false`, and decay anchored to the observed peak. Peak detection remains automatic unless a split is supplied. Lagrange degree is N-1 for N rise samples; `rise_degree` is ignored for this model. At the input nodes, the interpolant equals the input, so the rise window is zero before the subsequent filling step, including removal of any neural signal. Evaluation uses that exact identity rather than a high-degree monomial solve. The historical four-method benchmark explicitly retains its exponential and polynomial 3/3 and 3/5 configurations; it is not a benchmark of the new default. The updated toy demonstrates the new default models.
+The current defaults follow the published Windowed TEP notebook: pre_degree=2, Lagrange rise including the peak, free decay (constrain_decay=false), automatic offset-channel screening, cubic decay on offset channels and quadratic decay on other processed channels. If no offsets are found, the default fallback is whole-epoch linear detrending. See [TEP alignment](../TEP_ALIGNMENT.md) for source provenance, configuration and comparisons.
 
 ## Experimental recordings
 
-The Python and MATLAB demos disable filling (`fill_mode='none'`) to show the
-detrending result. For experimental recordings, enable random filling of the
-zeroed interval with `fill_mode='gaussian'` (the library default), and choose
+The Python and MATLAB demos keep Gaussian filling enabled (`fill_mode='gaussian'`),
+matching the library default. The zeroed rise plus its margin is replaced with
+Gaussian noise. For experimental recordings, choose
 the peak-search and correction windows for your data. See [filling options](../FILLING.md).

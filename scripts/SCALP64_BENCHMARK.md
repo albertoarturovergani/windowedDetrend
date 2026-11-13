@@ -1,5 +1,9 @@
 # Shared synthetic benchmark: 64 scalp channels
 
+This report retains the **historical figure profile** via Config.figure_defaults(...)
+and tmspath_config('figure'). The label default_lagrange3 refers to that recorded
+profile. For current defaults and full TEP comparisons see [TEP_ALIGNMENT.md](TEP_ALIGNMENT.md).
+
 The multichannel benchmark contains **214 epochs x 64 EEG channels x 2,500
 samples**: 13,696 channel traces sampled at 10 kHz from 0 to 249.9 ms. Each
 epoch is a simulation condition, not a participant or an independent clinical

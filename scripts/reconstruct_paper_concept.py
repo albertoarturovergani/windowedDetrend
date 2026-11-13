@@ -28,7 +28,7 @@ with warnings.catch_warnings(record=True) as caught:
  pd,_=curve_fit(lambda x,tau:exp_decay_constrained(x,tau,peak,t,observed),t[decay],observed[decay],p0=[100.])
  exp_fit=np.zeros_like(t);exp_fit[rise]=exp_rise(t[rise],*pr,t0);exp_fit[decay]=exp_decay_constrained(t[decay],*pd,peak,t,observed)
  # Use the actual plugin default models, with the known simulation split.
- cfg=Config(fill_mode='none', peak_s=peak/1000)
+ cfg=Config.figure_defaults(fill_mode='none', peak_s=peak/1000)
  _,poly_trend,poly_info=detrend(observed[None,None,:],t/1000,cfg)
  poly_fit=poly_trend[0,0]
  np.testing.assert_array_equal(poly_fit[rise],observed[rise])

@@ -1,0 +1,55 @@
+{
+  "repository": "https://github.com/albertoarturovergani/TMSpathPipeline",
+  "commit": "534e926e659885d97bd873a7a31efbac17ebdd96",
+  "source": "scripts/tmspath_utils.py",
+  "source_sha256": "e52a2a7086a11746ec0406ced699b96564c1f86b636154bb6f828c2cc3e903df",
+  "functions": {
+    "computeTimeMasks": {
+      "first_line": 9546,
+      "last_line": 9614
+    },
+    "computeSlopes_v4": {
+      "first_line": 9801,
+      "last_line": 9877
+    },
+    "computeDetrend_v6": {
+      "first_line": 10479,
+      "last_line": 11355
+    },
+    "polyfit_constrained_start": {
+      "first_line": 8173,
+      "last_line": 8196
+    },
+    "apply_offset_correction": {
+      "first_line": 11579,
+      "last_line": 11777
+    },
+    "generate_noise_from_distribution": {
+      "first_line": 10230,
+      "last_line": 10378
+    },
+    "shift_signal_by_mask": {
+      "first_line": 8156,
+      "last_line": 8171
+    }
+  },
+  "notebook": "scripts/20260901_TEP_v1.ipynb",
+  "notebook_sha256": "5c0a889fef6039b3a16e69dc90a83edacb928a9d9691fe5e6545d23ddc1aceae",
+  "config_cell_zero_based": 2,
+  "decay_constraint_expression": "False if 'nowind' not in typeOffsetDecay else True",
+  "windowed": {
+    "typeOffsetRise": "wind_poly_lagrange",
+    "typeOffsetDecay": "wind_poly_3",
+    "fitConstraint": false,
+    "pre_degree": 2,
+    "slope_threshold": 0.5,
+    "only_offset_channels": false,
+    "overall_degree": 1,
+    "onset_s": 0,
+    "peak_search_end_s": 0.02,
+    "fill_mode": "Gaussian",
+    "fill_margin_s": 0.005,
+    "fill_seed": 42
+  },
+  "hash_convention": "SHA256 of exact git blob bytes at the reference commit (independent of checkout line endings)."
+}

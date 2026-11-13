@@ -10,7 +10,7 @@ class FillingTests(unittest.TestCase):
         self.t = np.arange(-200, 501)/2000
         background = .7*np.sin(2*np.pi*11*self.t)+.2*np.cos(2*np.pi*23*self.t)
         self.data = np.stack([background, 2*background+1])[None]
-        self.cfg = Config(peak_s=.015, fill_mode='resample', channels=(0,))
+        self.cfg = Config(onset_s=.010,peak_s=.015, fill_mode='resample', channels=(0,),channel_policy='all',pre_degree=None)
 
     def test_optional_fill_and_source_are_separate_from_fit(self):
         original = self.data.copy()
@@ -34,7 +34,7 @@ class FillingTests(unittest.TestCase):
         fallback = fill_offset(self.data[0,0], self.t, .010, .0153, .5)
         self.assertTrue(fallback['source_fallback'])
         self.assertEqual(fallback['target_count'],self.t.size)
-        self.assertEqual(fallback['source_count'],int(np.sum(self.t<.010)))
+        self.assertEqual(fallback['source_count'],int(np.sum(self.t<=.010)))
 
     def test_pre_fit_does_not_change_filling_source(self):
         a, _, ai = detrend(self.data,self.t,self.cfg)
@@ -69,7 +69,7 @@ class FillingTests(unittest.TestCase):
             detrend(self.data,t,self.cfg)
         t=np.arange(100)/1000
         with self.assertRaisesRegex(ValueError,'pre-onset'):
-            detrend(np.ones((1,1,100)),t,replace(self.cfg,onset_s=0,peak_s=.02))
+            fill_offset(np.ones(100),t,-.001,.02,0)
 
     def test_gaussian_defaults_reproducibility_and_parameters(self):
         self.assertEqual(Config().fill_mode,'gaussian')

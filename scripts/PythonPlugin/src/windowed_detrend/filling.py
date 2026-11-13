@@ -28,10 +28,12 @@ implemented with NumPy so the optional fill does not add a core dependency.
     return np.fft.irfft(output, n=count) * (count / source_count)
 
 
-def fill_offset(signal, times, onset_s, peak_s, margin_s, mode='resample', seed=42, epoch=0, channel=0):
+def fill_offset(signal, times, onset_s, peak_s, margin_s, mode='resample', seed=42, epoch=0, channel=0, mask_convention='pipeline'):
     """Return replacement values and inclusive zero-based source/target bounds.
 
-    The rise contains onset <= t < peak. Its first and last sampled times
+    Pipeline rise contains onset <= t <= peak; pre contains t <= onset.
+    The optional figure convention uses rise < peak and pre < onset.
+    The first and last sampled rise times
     define the target, expanded by margin_s and clipped to the epoch. The
     source is the original pre-onset interval, trimmed by the same margin;
     if trimming removes all source samples, the full pre-onset interval is
@@ -49,8 +51,10 @@ def fill_offset(signal, times, onset_s, peak_s, margin_s, mode='resample', seed=
         raise ValueError('Fourier filling requires uniformly increasing sample times')
     if not np.isfinite(margin_s) or margin_s < 0:
         raise ValueError('fill_margin_s must be finite and nonnegative')
-    pre = np.flatnonzero(t < onset_s)
-    rise = np.flatnonzero((t >= onset_s) & (t < peak_s))
+    if mask_convention not in ('pipeline','figure'):
+        raise ValueError('Invalid mask_convention')
+    pre = np.flatnonzero(t <= onset_s if mask_convention=='pipeline' else t < onset_s)
+    rise = np.flatnonzero((t >= onset_s) & (t <= peak_s if mask_convention=='pipeline' else t < peak_s))
     if not pre.size or not rise.size:
         raise ValueError('Filling requires pre-onset source samples and a nonempty rise window')
     source = np.flatnonzero((t >= t[pre[0]]) & (t <= t[pre[-1]]-margin_s))

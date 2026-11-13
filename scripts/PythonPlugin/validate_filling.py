@@ -39,7 +39,7 @@ def validate(output):
         artifact[mask]=-30*(1-np.exp(-(actual_peak-onset)/.003))*np.exp(-(t[mask]-actual_peak)/.06)
         background=.4*np.sin(2*np.pi*13*t)+rng.normal(0,.02,len(t))
         data=np.stack([np.stack([background+artifact,background+2,1.7*(background+artifact)])+e*.1 for e in range(2)])
-        cfg=Config(onset_s=onset,peak_s=peak,peak_search_end_s=.03,end_s=.075,
+        cfg=Config(channel_policy='all',onset_s=onset,peak_s=peak,peak_search_end_s=.03,end_s=.075,
                    fill_mode=fill_mode,fill_margin_s=margin,pre_degree=pre_degree,channels=(0,2))
         if exponentials:
             cfg=replace(cfg,rise_model='singlerise',decay_model='singledecay',constrain_rise=True)
@@ -49,7 +49,7 @@ def validate(output):
         reference=raw.copy(); bounds=[]; noise_parameters=[]
         for rec in info['fits']:
             e,c=rec['epoch'],rec['channel']; split=rec['peak_s']
-            masks=[t<onset,(t>=onset)&(t<split),t>=split]
+            masks=[t<=onset,(t>=onset)&(t<=split),t>split]
             epochs=type('EpochTimes',(),{'times':t})()
             reference[e,c]=apply_offset_correction(raw[e,c],data[e,c],masks,fill_mode,margin*1000,epochs,['Gaussian'],
                 rng=np.random.default_rng(np.random.SeedSequence([cfg.fill_seed,c,e])))

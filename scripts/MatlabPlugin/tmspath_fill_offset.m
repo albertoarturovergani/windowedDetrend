@@ -1,4 +1,4 @@
-function info = tmspath_fill_offset(signal,times,onset_s,peak_s,margin_s,mode,seed,epoch,channel)
+function info = tmspath_fill_offset(signal,times,onset_s,peak_s,margin_s,mode,seed,epoch,channel,mask_convention)
 % Filling following pipeline apply_offset_correction: Gaussian or Fourier.
 % Source: ORIGINAL pre-onset samples trimmed by margin_s (fallback: all pre).
 % Target: first to last sampled rise time, expanded by margin_s, epoch-clipped.
@@ -8,6 +8,7 @@ if nargin<6, mode='resample'; end
 if nargin<7, seed=42; end
 if nargin<8, epoch=1; end
 if nargin<9, channel=1; end
+if nargin<10, mask_convention='pipeline'; end
 assert(isvector(times) && numel(t)==numel(signal) && numel(t)>=2 && ...
  all(isfinite(t)) && all(isfinite(signal)),'Fill requires finite signal and times');
 spacing=diff(t);
@@ -17,7 +18,12 @@ if strcmp(mode,'resample')
   'Fourier filling requires uniformly increasing sample times');
 end
 assert(isscalar(margin_s) && isfinite(margin_s) && margin_s>=0,'Invalid fill_margin_s');
-pre=find(t<onset_s); rise=find(t>=onset_s & t<peak_s);
+assert(ismember(mask_convention,{'pipeline','figure'}),'Invalid mask_convention');
+if strcmp(mask_convention,'pipeline')
+ pre=find(t<=onset_s); rise=find(t>=onset_s & t<=peak_s);
+else
+ pre=find(t<onset_s); rise=find(t>=onset_s & t<peak_s);
+end
 assert(~isempty(pre) && ~isempty(rise),'Filling requires pre-onset source samples and a nonempty rise window');
 source=find(t>=t(pre(1)) & t<=t(pre(end))-margin_s);
 fallback=isempty(source); if fallback, source=pre; end

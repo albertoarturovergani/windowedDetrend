@@ -10,7 +10,7 @@ root=Path(__file__).resolve().parents[1];t=np.arange(2500)/10000;gt,a=synthetic(
 info=mne.create_info(['Cz','EOG'],10000,['eeg','eog'])
 x=np.concatenate([data,np.ones_like(data)*3],axis=1)
 epochs=mne.EpochsArray(x,info,tmin=0,verbose=False)
-out,trend,diag=detrend_mne(epochs,Config(fill_mode='none', onset_s=.01,peak_s=.015))
+out,trend,diag=detrend_mne(epochs,Config.figure_defaults(fill_mode='none', onset_s=.01,peak_s=.015))
 assert out.ch_names==epochs.ch_names
 np.testing.assert_array_equal(out.get_data()[:,1],x[:,1])
 np.testing.assert_array_equal(epochs.get_data(),x)

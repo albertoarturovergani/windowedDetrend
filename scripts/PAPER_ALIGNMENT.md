@@ -1,4 +1,9 @@
-# Paper alignment and scientific interpretation
+# Historical paper figures and scientific interpretation
+
+Current TEP defaults and full-pipeline-function comparisons are documented in
+[TEP_ALIGNMENT.md](TEP_ALIGNMENT.md). This document describes the historical
+figure/benchmark profile, now explicit through Config.figure_defaults(...) and
+tmspath_config('figure'). Its recorded scores are not new TEP-default results.
 
 ## Sources inspected
 
@@ -73,12 +78,12 @@ dimensions, seed handling, evaluation windows and reproduction commands.
   More robust fitting can improve the global comparator relative to the old
   notebook. A result favoring the global fit must not be suppressed or treated
   as a reproduction of the old reported ranking.
-- Current defaults: Lagrange rise without a separate start anchor, cubic decay
+- Historical figure profile: Lagrange rise without a separate start anchor, cubic decay
   anchored to the observed peak, and no exponential offset. Historical
   exponential benchmark configurations explicitly use a zero rise anchor.
   Offsets and constraints are configurable. The peak anchor contains neural
   activity; early components can therefore be distorted or removed.
-- Masks are disjoint: pre t<onset, rise onset<=t<peak, decay t>=peak.
+- Historical figure masks are disjoint: pre t<onset, rise onset<=t<peak, decay t>=peak.
   Supporting Fig.3 instead assigns the peak sample to rise; this one-sample
   convention follows the figure notebook. No sample belongs to both fitting masks; subsequent filling is a separate replacement step.
 - Automatic peak: maximum absolute observed amplitude within the search window.

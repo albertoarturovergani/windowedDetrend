@@ -29,7 +29,7 @@ for i=1:size(data,1)
  r=parameters(i,1); d=parameters(i,2); family=parameters(i,5);
  peak=.015; if family==1, peak=.010+r*log1p(d/r); end
  for m=1:4
-  cfg=tmspath_config();cfg.fill_mode='none';cfg.onset_s=.010;cfg.peak_s=peak;cfg.peak_search_end_s=.100;
+  cfg=tmspath_config('figure');cfg.fill_mode='none';cfg.onset_s=.010;cfg.peak_s=peak;cfg.peak_search_end_s=.100;
   cfg.rise_model='singlerise';cfg.decay_model='singledecay';cfg.constrain_rise=true;
   if m==2 || m==3
    cfg.rise_model='poly';cfg.decay_model='poly';cfg.constrain_rise=false;

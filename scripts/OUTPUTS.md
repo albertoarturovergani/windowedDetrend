@@ -16,7 +16,7 @@ corrected, trend, diagnostics = detrend(data, times, cfg)
 | `trend` | Estimated artifact/trend at every input sample, in the same amplitude units as the input. |
 | `diagnostics` | Configuration actually used and the fitted parameters for each processed epoch/channel. |
 
-Core arrays have shape epochs x channels x samples. Unselected channels have zero trend and unchanged corrected data. With the default `pre_degree`, samples outside the union of the correction and replacement intervals remain unchanged. The fill margin can extend beyond the fitting interval. Outputs are returned in memory; the core does not automatically save files.
+Core arrays have shape epochs x channels x samples. Unselected channels have zero trend and unchanged corrected data. The default quadratic pre fit also changes pre-onset samples. In windowed mode, samples after `end_s` remain unchanged unless reached by the fill margin. If screening finds no offsets, the default fallback instead detrends the whole epoch linearly, without filling. The fill margin can extend beyond the fitting interval. Outputs are returned in memory; the core does not automatically save files.
 
 `detrend_mne` returns a corrected copy of the MNE Epochs object, an array of trends in core layout, and diagnostics. `tmspath_eeglab` returns a corrected EEG structure, a trend array in channels x samples x trials layout, and diagnostics. Diagnostic indices still refer to epochs and channels.
 
@@ -24,7 +24,9 @@ Core arrays have shape epochs x channels x samples. Unselected channels have zer
 
 `diagnostics.config` (MATLAB) or `diagnostics["config"]` (Python) stores the effective configuration. `fits` contains one record per processed epoch/channel, in epoch order and then selected-channel order. It is a Python list of dictionaries or a MATLAB cell array of structs, not a dense epoch/channel matrix.
 
-Each windowed record contains `epoch`, `channel`, `peak_s`, `rise`, and `decay`. Indices are zero-based in Python and one-based in MATLAB. `peak_s` is the split time in seconds relative to TMS, either supplied by the user or detected from the maximum absolute input amplitude. It is not optimized jointly with the time constants. An optional pre-onset fit is stored in `pre`; external-comparator mode stores `global` instead of `rise`, `decay`, and `peak_s`.
+The top-level `operation` is `windowed`, `overall`, `none`, or the optional `global` comparator. `channel_selection` records the policy, selected and offset channels, threshold and (for automatic screening) slopes, z-scores, epoch-mean z-scores and peaks. No-offset fallback records contain `overall` instead of windowed fits; `none` has no fits.
+
+Each windowed record contains `epoch`, `channel`, `peak_s`, `rise`, `decay`, `is_offset_channel` and `windows` (first/last sample indices and count for each nonempty window). Indices are zero-based in Python and one-based in MATLAB. `peak_s` is the split time in seconds relative to TMS, either supplied by the user or detected from the maximum absolute input amplitude. It is not optimized jointly with the time constants. The default pre-onset fit is stored in `pre`; external-comparator mode stores `global` instead of `rise`, `decay`, and `peak_s`.
 
 | Segment field | Meaning |
 |---|---|
@@ -66,18 +68,18 @@ u = x / scale_s
 trend(x) = c0 + c1*u + ... + cd*u^d
 ```
 
-These coefficients use normalized local time, not absolute epoch time. Since `u` is dimensionless, all coefficients have the input amplitude unit. Coefficients for powers of time in seconds would be `ck / scale_s^k`. The degree is selected by the user, not optimized; for a polynomial record it is `len(coefficients)-1` in Python or `numel(coefficients)-1` in MATLAB. The configuration also records the selected degrees. Polynomial records do not currently contain a separate `degree` field.
+These coefficients use normalized local time, not absolute epoch time. Since `u` is dimensionless, all coefficients have the input amplitude unit. Coefficients for powers of time in seconds would be `ck / scale_s^k`. The degree is selected by the user, not optimized; for a polynomial record it is `len(coefficients)-1` in Python or `numel(coefficients)-1` in MATLAB. The configuration also records the selected degrees. Polynomial records also contain the effective `degree` field: cubic for offset channels, quadratic for other processed channels under the default channel policy.
 
-For the default cubic decay, the four values are `[c0, c1, c2, c3]`. With `constrain_decay=True` / `true`, `c0` equals the observed signal interpolated at the split (`anchor`); the remaining coefficients are fitted by least squares. No tau is fitted, and tau-search settings are inactive.
+For a default offset-channel cubic decay, the four values are `[c0, c1, c2, c3]`. The default decay fit is free (`constrain_decay=False` / `false`). With the optional `constrain_decay=True` / `true`, `c0` equals the observed signal interpolated at the split (`anchor`); the remaining coefficients are fitted by least squares. No tau is fitted, and tau-search settings are inactive.
 
-To reconstruct the fitted decay from its diagnostics:
+To reconstruct a windowed polynomial decay from its diagnostics (first check `operation` is `windowed`):
 
 ```python
 import numpy as np
 rec = diagnostics["fits"][0]
 fit = rec["decay"]  # Default model: poly
 end_s = cfg.end_s if cfg.end_s is not None else times[-1]
-mask = (times >= rec["peak_s"]) & (times <= end_s)
+mask = (times > rec["peak_s"]) & (times <= end_s)
 u = (times[mask] - rec["peak_s"]) / fit["scale_s"]
 reconstructed = np.polynomial.polynomial.polyval(u, fit["coefficients"])
 np.testing.assert_allclose(reconstructed, trend[rec["epoch"], rec["channel"], mask],
@@ -88,7 +90,7 @@ np.testing.assert_allclose(reconstructed, trend[rec["epoch"], rec["channel"], ma
 rec = diagnostics.fits{1};
 fit = rec.decay; % Default model: poly
 end_s = cfg.end_s; if isempty(end_s), end_s = times(end); end
-mask = times >= rec.peak_s & times <= end_s;
+mask = times > rec.peak_s & times <= end_s;
 u = (times(mask) - rec.peak_s) / fit.scale_s;
 % MATLAB polyval expects descending powers, so reverse the coefficients.
 reconstructed = polyval(flipud(fit.coefficients(:)), u);
@@ -100,18 +102,23 @@ assert(max(abs(reconstructed(:) - reference)) < 1e-8);
 
 The default rise is an interpolant through all observed rise samples. Additional fields are `degree` (N-1), `node_times_s` (relative to the segment origin), and `node_values` (observed amplitudes). `coefficients` and `tau_s` are empty because no monomial coefficient vector or tau is estimated.
 
+The pipeline convention includes onset in both pre and rise fits and includes
+peak only in rise. Assembly writes pre first, then rise: the rise fit overrides
+the pre fit at onset. For that shared sample, the assembled trend therefore
+need not equal the pre polynomial alone.
+
 At the input nodes the trend equals the observed signal exactly. Consequently `residual_mse=0` and the rise before filling is zero, including any neural component and noise. This is an interpolation property, not evidence of successful neural recovery.
 
 ## Inspect the outputs in Python and MATLAB
 
-For the default Lagrange/cubic model:
+For a windowed Lagrange/polynomial result (check `operation` first):
 
 ```python
 rec = diagnostics["fits"][0]
 print("Epoch/channel:", rec["epoch"], rec["channel"])
 print("Split (ms):", 1000 * rec["peak_s"])
 print("Rise interpolation degree:", rec["rise"]["degree"])
-print("Decay coefficients [c0, c1, c2, c3]:", rec["decay"]["coefficients"])
+print("Decay coefficients in ascending powers:", rec["decay"]["coefficients"])
 print("Decay time scale (s):", rec["decay"]["scale_s"])
 print("Decay fit residual MSE:", rec["decay"]["residual_mse"])
 ```
@@ -183,8 +190,9 @@ save('detrending_results.mat','corrected','trend','diagnostics','times','cfg');
 
 ## Gaussian filling after detrending
 
-The default workflow uses Lagrange rise, cubic decay, automatic peak detection
-and Gaussian filling. Set `fill_mode` to `gaussian` (default), `resample`, or
+The default workflow uses a quadratic pre fit, Lagrange rise, automatic peak
+detection and channel screening, free cubic/quadratic decay and Gaussian filling.
+The no-offset fallback uses a whole-epoch linear fit without filling. Set `fill_mode` to `gaussian` (default), `resample`, or
 `none`; `fill_margin_s=0.005` expands the rise interval on each side and
 `fill_seed=42` makes noise reproducible within each implementation. Choose
 `onset_s`, `peak_search_end_s` and `end_s` from your data and inspect the split.
@@ -196,3 +204,6 @@ window by the configured margin. Gaussian draws differ across languages;
 their distribution parameters and masks agree.
 
 See [filling, defaults, diagnostics and validation](FILLING.md).
+
+See [TEP alignment and channel policy](TEP_ALIGNMENT.md) for the source notebook,
+fallback behavior, historical mask profile and independent comparisons.

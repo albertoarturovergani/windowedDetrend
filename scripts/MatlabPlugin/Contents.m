@@ -14,3 +14,10 @@
 %   tmspath_fill_offset - Gaussian or Fourier-resampled offset replacement.
 %   test_filling        - Filling and local random-stream checks.
 %   run_fill_validation - Cross-language filling validation.
+
+%   tmspath_time_masks - Published TEP onset/peak sample conventions.
+%   tmspath_select_offset_channels - Slope screening and channel classification.
+%   test_tep_alignment - TEP defaults, boundaries, channel degrees and fallback.
+%   run_tep_validation - Full original TEP/Python/MATLAB numerical comparison.
+
+%   tmspath_demo_data - Matched multichannel EEG with stimulus/channel jitter.

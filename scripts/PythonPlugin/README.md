@@ -3,6 +3,26 @@
 Standalone post-epoching TMS-EEG detrending. Local development release 0.1.0;
 not yet published on PyPI. Source repository: https://github.com/albertoarturovergani/windowedDetrend
 
+## Controls to adjust first
+
+1. **`slope_threshold=0.5`**: the main decision parameter for recognizing
+   channels with extreme artifacts and choosing the detrending strategy.
+   A channel is classified as extreme when its slope score reaches or exceeds
+   this threshold. Lower values identify more channels; higher values fewer.
+2. **`onset_s=0`, `peak_search_end_s=0.020`**: peak search window in seconds.
+   The peak divides rise/decay; slope screening uses pre, rise and decay.
+3. **Pre degree 2 / Lagrange rise / decay degree 3**: keep these defaults.
+   Other processed channels use degree 2 in decay. Lagrange degree is N-1;
+   `rise_degree` does not change it. Decay is unconstrained by default.
+
+With auto screening, a threshold higher than every channel score selects the
+**basic, whole-epoch linear detrend**, without Lagrange zeroing or gap filling.
+If at least one channel reaches the threshold, **windowed detrending** runs on
+all selected channels by default, including those below threshold. The score
+is the largest absolute epoch-mean standardized slope across pre/rise/decay;
+equality counts as extreme (`>=`). See the
+[threshold guide and demo outcomes](../../README.md#start-with-these-three-controls).
+
 ## Environment and direct source use
 
 See [ENVIRONMENT.md](ENVIRONMENT.md) for Conda/Miniforge and standard Python
@@ -25,18 +45,17 @@ The distribution name has not been reserved or verified as available.
 ## API
 
 For an executable demonstration, open [demo_windowed_detrend.ipynb](demo_windowed_detrend.ipynb).
-It includes the toy signal, polynomial detrending without filling, recovery metrics
-and plots. The recovered curve is labelled **Polynomial**.
-Edit the opening sections A (toy generation) and B (detrending), then restart
-the kernel and run all cells. All core parameters, alternatives
-and evaluation controls are explained in English at the beginning.
+It includes 16-channel, 12-stimulus EEG with timing/amplitude jitter, automatic
+screening, a threshold sweep, Polynomial detrending with Gaussian filling and plots. The recovered curve is labelled **Polynomial**.
+Edit section A (threshold, windows, models), then B (synthetic EEG) if needed; restart
+the kernel and run all cells. The main controls are ordered by importance; advanced settings retain their defaults.
 See [ENVIRONMENT.md](ENVIRONMENT.md) for JupyterLab setup and launch commands.
+The executable plain-text companion is
+[demo_windowed_detrend_source.py](demo_windowed_detrend_source.py).
 
 ```python
 from windowed_detrend import Config, detrend
-cfg = Config(onset_s=0.010, peak_s=0.015,
-             rise_model="lagrange", decay_model="poly",
-             rise_degree=3, decay_degree=3, constrain_rise=False)
+cfg = Config(slope_threshold=0.5, onset_s=0.0, peak_search_end_s=0.020)
 cleaned, artifact, diagnostics = detrend(data, times, cfg)
 ```
 
@@ -47,12 +66,11 @@ to select channels (zero-based); None selects all, empty tuple selects none.
 `peak_s=None` detects the maximum absolute amplitude within the configured
 search interval independently per trial/channel. Inspect that peak on real data:
 physiological components or noise can move it. `end_s` limits correction;
-`pre_degree=None` preserves baseline, otherwise fits a pre-onset polynomial.
-`constrain_decay=True` anchors the decay to the observed signal at the split,
-which includes any neural activity at that point. This can bias recovery.
+The default pre-onset fit is quadratic (`pre_degree=2`); `None` disables this fit. The fill margin can still replace pre samples.
+The default `constrain_decay=False` matches the Windowed TEP notebook; True optionally anchors to the observed peak.
 
 Models: `lagrange`, `poly`, `singlerise`, `singledecay`, `doubledecay`, `biexp`, `alpha`.
-Use `mode="global", global_model="biexp"` for the non-windowed comparator.
+Use `mode="global", global_model="biexp", fill_mode="none"` for the non-windowed comparator.
 Exponential amplitudes and optionally offsets are fitted by least squares;
 time constants use a bounded logarithmic grid plus refinement, not upstream
 SciPy curve_fit. See PAPER_ALIGNMENT.md for important differences.
@@ -138,12 +156,12 @@ Exponential time-constant searches use `refinements=5` by default (previously
 computation. It has no effect on Lagrange or polynomial fits. The current
 notebook and direct paper comparison have been recomputed with this default.
 
-Windowed polynomial detrending: `rise_model=lagrange`, `decay_model=poly`, `decay_degree=3`, `constrain_rise=false`, and decay anchored to the observed peak. Peak detection remains automatic unless a split is supplied. Lagrange degree is N-1 for N rise samples; `rise_degree` is ignored for this model. At the input nodes, the interpolant equals the input, so the rise window is zero before the subsequent filling step, including removal of any neural signal. Evaluation uses that exact identity rather than a high-degree monomial solve. The historical four-method benchmark explicitly retains its exponential and polynomial 3/3 and 3/5 configurations; it is not a benchmark of the new default. The updated toy demonstrates the new default models.
+The current defaults follow the published Windowed TEP notebook: pre_degree=2, Lagrange rise including the peak, free decay (constrain_decay=false), automatic offset-channel screening, cubic decay on offset channels and quadratic decay on other processed channels. If no offsets are found, the default fallback is whole-epoch linear detrending. See [TEP alignment](../TEP_ALIGNMENT.md) for source provenance, configuration and comparisons.
 
 
 ## Experimental recordings
 
-The Python and MATLAB demos disable filling (`fill_mode='none'`) to show the
-detrending result. For experimental recordings, enable random filling of the
-zeroed interval with `fill_mode='gaussian'` (the library default), and choose
+The Python and MATLAB demos keep Gaussian filling enabled (`fill_mode='gaussian'`),
+matching the library default. The zeroed rise plus its margin is replaced with
+Gaussian noise. For experimental recordings, choose
 the peak-search and correction windows for your data. See [filling options](../FILLING.md).

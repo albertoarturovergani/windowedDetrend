@@ -46,9 +46,12 @@ interpreter if using Option 1.
 
 ## Interactive demonstration notebook
 
-`demo_windowed_detrend.ipynb` includes a synthetic signal, the `detrend`
-function call, recovery metrics, plots, and an optional separate exponential
-fit. Saved outputs are included. Run all cells in order to recompute them.
+`demo_windowed_detrend.ipynb` includes 16-channel, 12-stimulus synthetic EEG
+with timing/amplitude jitter, automatic screening and a threshold sweep.
+Plots are labelled Polynomial: quadratic pre, Lagrange rise and free
+cubic/quadratic decay according to channel classification. Gaussian filling
+of the zeroed rise plus margin is enabled. Saved outputs are included; run all cells to recompute them.
+The executable plain-text companion is `demo_windowed_detrend_source.py`.
 
 The Conda environment includes JupyterLab and ipykernel. For an existing
 environment, update it with `conda env update -n windowed-detrend -f environment.yml`.
@@ -65,7 +68,8 @@ For the venv alternative, from the same directory:
 .\.venv\Scripts\python.exe -m jupyterlab demo_windowed_detrend.ipynb
 ```
 
-Select the matching Python environment as the notebook kernel. The notebook
+Select the matching Python environment as the notebook kernel. The multichannel notebook orders controls as threshold, search windows and
+pre/rise/post models; it shows channel decisions across five thresholds. It
 locates the source relative to the working directory, without personal paths
 or plugin installation.
 
@@ -82,7 +86,7 @@ sys.path.insert(0, str(plugin_src))
 
 from windowed_detrend import Config, detrend
 
-cfg = Config(rise_model="lagrange", decay_model="poly", decay_degree=3)
+cfg = Config(slope_threshold=0.5, onset_s=0.0, peak_search_end_s=0.020)
 # data: epochs x channels x samples; times: seconds.
 # Pulse handling, bad trial/channel removal and epoching precede this step.
 cleaned, artifact, diagnostics = detrend(data, times, cfg)
@@ -112,3 +116,10 @@ Or, with Option 2:
 ```powershell
 .\.venv\Scripts\python.exe -m pip freeze > requirements-resolved.txt
 ```
+
+## Published TEP reference checks
+
+Use Python 3.12+ and `python -m pip install ".[validation,benchmark]"` for
+`validate_tep_pipeline.py`. The Conda environment includes pandas for these
+reference comparisons; pandas and SciPy are not core dependencies. See
+[TEP_ALIGNMENT.md](../TEP_ALIGNMENT.md).
