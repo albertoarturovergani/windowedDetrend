@@ -49,6 +49,14 @@ It includes 16-channel, 12-stimulus EEG with timing/amplitude jitter, automatic
 screening, a threshold sweep, Polynomial detrending with Gaussian filling and plots. The recovered curve is labelled **Polynomial**.
 Edit section A (threshold, windows, models), then B (synthetic EEG) if needed; restart
 the kernel and run all cells. The main controls are ordered by importance; advanced settings retain their defaults.
+
+The final figure places butterflies of **all observed channels before correction**
+and **all corrected channels** side by side, for the same epoch. The two strongest
+simulated artifact channels keep the same colors; other channels are grey.
+Amplitudes remain in their original units, with separately labelled vertical
+scales. The threshold figure retains one clean-versus-corrected channel example.
+Legends are outside the signal axes.
+
 See [ENVIRONMENT.md](ENVIRONMENT.md) for JupyterLab setup and launch commands.
 The executable plain-text companion is
 [demo_windowed_detrend_source.py](demo_windowed_detrend_source.py).

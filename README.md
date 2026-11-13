@@ -71,7 +71,7 @@ channel screening and all library defaults, including Gaussian filling of
 the zeroed rise plus margin. The only recovered method shown is **Polynomial**.
 
 The demo changes only the threshold on the same data and shows the resulting
-channel scores, branch decision, recovered waveforms and timing jitter:
+channel scores, branch decisions, one recovered channel and before/after butterflies:
 
 | Threshold | Flagged channels in this simulation | Operation |
 |---|---|---|
@@ -83,10 +83,19 @@ channel scores, branch decision, recovered waveforms and timing jitter:
 These are example outcomes for the supplied synthetic data, not thresholds
 recommended for other recordings. MSE uses the known synthetic clean signal.
 
-![Multichannel threshold decisions and Polynomial recovery](scripts/results/filling_validation/python_demo.png)
+The final figure shows a **butterfly of all 16 observed channels before
+correction**, next to the **same epoch after correction**. EEG01 and EEG02,
+the two strongest simulated artifact channels, retain their orange/blue
+colors; the other channels are grey. Each trace is a channel from epoch 1,
+without averaging epochs or normalizing amplitudes. The vertical axes are
+scaled separately, explicitly labelled, so the corrected oscillations remain
+visible. The other figure compares the known clean signal with Polynomial
+recovery for one channel, alongside the threshold controls.
 
-[Simulated EEG and jitter](scripts/results/filling_validation/python_demo_input.png)
-| [MATLAB figure](scripts/results/filling_validation/matlab_demo.png)
+![Butterfly EEG before and after Polynomial correction](scripts/results/filling_validation/python_demo_butterfly.png)
+
+[Thresholds and single-channel recovery](scripts/results/filling_validation/python_demo.png)
+| [MATLAB butterfly figure](scripts/results/filling_validation/matlab_demo_butterfly.png)
 
 ## Place in the preprocessing pipeline
 

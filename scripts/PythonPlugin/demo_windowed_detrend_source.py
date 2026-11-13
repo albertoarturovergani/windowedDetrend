@@ -91,56 +91,72 @@ for threshold in sweep_thresholds:
     sweep_counts.append(count); sweep_operations.append(sweep_info['operation']); sweep_mse.append(error)
     print(f'{threshold:8.3f}  {count:16d}  {sweep_info["operation"]:20s}  {error:.6f}')
 
-# %% 3. Inspect screening and recovered waveforms
-fig, axes = plt.subplots(2, 2, figsize=(12, 8), layout='constrained')
+# %% 3. Inspect screening and one recovered channel
+fig = plt.figure(figsize=(12, 8), layout='constrained')
+grid = fig.add_gridspec(2, 2)
+ax_scores = fig.add_subplot(grid[0, 0])
+ax_sweep = fig.add_subplot(grid[0, 1])
+ax_wave = fig.add_subplot(grid[1, :])
 colors = ['#b55229' if c in offset_channels else '#75899a' for c in range(toy['n_channels'])]
-ax = axes[0, 0]
+ax = ax_scores
 ax.bar(np.arange(toy['n_channels']), scores, color=colors)
 ax.axhline(cfg.slope_threshold, color='#b55229', ls='--', label=f'Threshold = {cfg.slope_threshold:g}')
 ax.set_xticks(np.arange(toy['n_channels']), labels, rotation=60, ha='right', fontsize=8)
 ax.set_ylabel('max |mean slope z-score|'); ax.set_title('1. Channel decision'); ax.legend()
-ax = axes[0, 1]
+ax = ax_sweep
 ax.plot(sweep_thresholds, sweep_counts, 'o', color='#245877')
-for x, count, name in zip(sweep_thresholds, sweep_counts, sweep_operations):
-    ax.annotate('Linear' if name=='overall' else 'Windowed', (x,count),
-                xytext=(0,8), textcoords='offset points', ha='center', fontsize=8)
+for x, count in zip(sweep_thresholds, sweep_counts):
+    ax.annotate(str(count), (x,count), xytext=(0,8), textcoords='offset points', ha='center', fontsize=9)
 ax.axvline(cfg.slope_threshold, color='#b55229', ls='--')
 ax.set(xlabel='Slope threshold', ylabel='Flagged channels', ylim=(-1,toy['n_channels']+3),
        xlim=(0,float(sweep_thresholds[-1])+.3), title='2. Same EEG, different threshold')
-display_channels = [int(np.argmax(scores)), int(np.argmin(scores))]
-for ax, c in zip(axes[1], display_channels):
-    ax.plot(times*1000, truth[0,c], color='black', lw=1, label='Known clean signal')
-    ax.plot(times*1000, corrected[0,c], color='#b55229', lw=1, label='Polynomial')
-    ax.axvspan(cfg.onset_s*1000,cfg.peak_search_end_s*1000,color='#dce7ee',alpha=.5,label='Peak search')
-    rec = next((r for r in diagnostics['fits'] if r['epoch']==0 and r['channel']==c), None)
-    if rec and 'peak_s' in rec:
-        ax.axvline(1000*rec['peak_s'],color='#245877',ls=':',label='Detected split')
-        subtitle=f'decay degree {rec["decay"]["degree"]}'
-    else:
-        subtitle='whole-epoch linear'
-    ax.set(title=f'{labels[c]}, epoch 1: {subtitle}',xlabel='Time from trigger (ms)',
-           ylabel='Amplitude (a.u.)',xlim=(-20,200))
-# Share one legend below the layout so it never covers either waveform.
-fig.legend(*axes[1, 0].get_legend_handles_labels(), loc='outside lower center',
+ax.text(.98,.95,'Flagged channels > 0: Windowed\nNo flagged channels: Linear',
+        transform=ax.transAxes,ha='right',va='top',fontsize=9)
+display_epoch = 0  # One epoch, not an average; MATLAB uses index 1 for this epoch.
+display_channel = int(np.argmax(scores))
+ax = ax_wave; c = display_channel; e = display_epoch
+ax.plot(times*1000, truth[e,c], color='black', lw=1, label='Known clean signal')
+ax.plot(times*1000, corrected[e,c], color='#b55229', lw=1, label='Polynomial')
+ax.axvspan(cfg.onset_s*1000,cfg.peak_search_end_s*1000,color='#dce7ee',alpha=.5,label='Peak search')
+rec = next((r for r in diagnostics['fits'] if r['epoch']==e and r['channel']==c), None)
+if rec and 'peak_s' in rec:
+    ax.axvline(1000*rec['peak_s'],color='#245877',ls=':',label='Detected split')
+    subtitle=f'decay degree {rec["decay"]["degree"]}'
+else:
+    subtitle='whole-epoch linear'
+ax.set(title=f'{labels[c]}, epoch {e+1}: {subtitle}',xlabel='Time from trigger (ms)',
+       ylabel='Amplitude (a.u.)',xlim=(-20,200))
+fig.legend(*ax_wave.get_legend_handles_labels(), loc='outside lower center',
            ncol=2, fontsize=9, frameon=False)
 fig.suptitle(f'Polynomial | {toy["n_channels"]} channels x {toy["n_epochs"]} stimuli | {operation}')
 
-# %% 4. Inspect the simulated EEG and timing jitter
-fig_input, axes_input = plt.subplots(1, 2, figsize=(12, 4), layout='constrained')
-ax = axes_input[0]
-im = ax.imshow(data[0],aspect='auto',origin='lower',
-               extent=[1000*times[0],1000*times[-1],.5,toy['n_channels']+.5],cmap='RdBu_r')
-ax.set(xlabel='Time from trigger (ms)',ylabel='Channel',title='Observed EEG: epoch 1',xlim=(-20,200))
-fig_input.colorbar(im,ax=ax,label='Amplitude (a.u.)')
-ax = axes_input[1]
-epoch_numbers=np.arange(1,toy['n_epochs']+1)
-for c in range(toy['n_channels']):
-    ax.plot(epoch_numbers,1000*metadata['artifact_onsets_s'][:,c],'.',color='#75899a',alpha=.6)
-ax.plot(epoch_numbers,1000*np.mean(metadata['artifact_onsets_s'],axis=1),'-o',color='#245877',label='Mean across channels')
-ax.axhline(3,color='black',ls=':',label='Nominal onset: 3 ms')
-ax.set(xlabel='Stimulus / epoch',ylabel='Residual artifact onset (ms)',title='Stimulus jitter + channel latency')
-fig_input.legend(*ax.get_legend_handles_labels(), loc='outside lower center',
-                 ncol=2, fontsize=9, frameon=False)
+# %% 4. Butterfly view: before and after correction
+# Both panels show ALL channels from the SAME epoch, with the same colors.
+# Highlight the two strongest simulated artifacts, independently of screening.
+# This is a display-only use of synthetic metadata; it does not affect fitting.
+highlight_channels = np.argsort(np.mean(np.abs(metadata['artifact_gains']),axis=0))[-2:][::-1].tolist()
+other_channels = [c for c in range(toy['n_channels']) if c not in highlight_channels]
+highlight_colors = ['#b55229', '#245877']
+display_mask = (times >= -.020) & (times <= .200)
+fig_butterfly, axes_butterfly = plt.subplots(1, 2, figsize=(12, 4.8), sharex=True, layout='constrained')
+for ax, values, heading in zip(axes_butterfly, (data, corrected),
+                                ('Before correction: observed EEG', 'After correction: Polynomial')):
+    for j, c in enumerate(other_channels):
+        ax.plot(times*1000, values[display_epoch,c], color='#a5afb6', lw=.8,
+                label=f'Other channels ({len(other_channels)})' if j==0 else None)
+    for c, color in zip(highlight_channels,highlight_colors):
+        ax.plot(times*1000, values[display_epoch,c], color=color, lw=1.2, label=labels[c])
+    ax.axvline(0,color='#75899a',ls=':',lw=.8)
+    visible = values[display_epoch][:,display_mask]
+    lower,upper = float(visible.min()),float(visible.max())
+    pad = .08*max(upper-lower,1e-12)
+    ax.set(title=heading,xlabel='Time from trigger (ms)',ylabel='Amplitude (a.u.)',
+           xlim=(-20,200),ylim=(lower-pad,upper+pad))
+    ax.grid(alpha=.15)
+fig_butterfly.legend(*axes_butterfly[0].get_legend_handles_labels(), loc='outside lower center',
+                     ncol=3, fontsize=9, frameon=False)
+fig_butterfly.suptitle(f'Butterfly EEG | {toy["n_channels"]} channels, epoch {display_epoch+1}\n'
+                      'Amplitude axes scaled separately; original signal units')
 plt.show()
 
 # %% 5. Continue the host pipeline

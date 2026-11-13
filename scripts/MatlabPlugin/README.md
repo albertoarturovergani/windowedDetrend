@@ -65,6 +65,14 @@ including any neural activity there.
 open("C:\path\to\windowedDetrend\scripts\MatlabPlugin\demo_windowed_detrend.mlx");
 ```
 
+
+The final figure places butterflies of **all observed channels before correction**
+and **all corrected channels** side by side, for the same epoch. The two strongest
+simulated artifact channels keep the same colors; other channels are grey.
+Amplitudes remain in their original units, with separately labelled vertical
+scales. The threshold figure retains one clean-versus-corrected channel example.
+Legends are outside the signal axes.
+
 The editable plain-text companion is `demo_windowed_detrend_source.m`.
 The source was executed with MATLAB R2023b. Select Run All in the Live Script
 to generate the inline figures. Current demo figures and reports are in

@@ -85,7 +85,7 @@ for k=1:numel(sweep_thresholds)
  fprintf('%8.3f  %16d  %-20s  %.6f\n',sweep_thresholds(k),sweep_counts(k),sweep_operations{k},sweep_mse(k));
 end
 
-%% 3. Inspect screening and recovered waveforms
+%% 3. Inspect screening and one recovered channel
 fig=figure('Color','w','Position',[100 100 1200 800]);
 layout=tiledlayout(fig,2,2,'TileSpacing','compact','Padding','compact');
 blue=[.14 .35 .47]; orange=[.71 .32 .16]; grey=[.46 .54 .60];
@@ -98,54 +98,73 @@ ylabel(ax,'max |mean slope z-score|'); title(ax,'1. Channel decision');
 ax=nexttile(layout);
 plot(ax,sweep_thresholds,sweep_counts,'o','Color',blue,'MarkerFaceColor',blue); hold(ax,'on');
 for k=1:numel(sweep_thresholds)
- text_label='Windowed'; if strcmp(sweep_operations{k},'overall'), text_label='Linear'; end
- text(ax,sweep_thresholds(k),sweep_counts(k)+.8,text_label,'HorizontalAlignment','center','FontSize',8);
+ text(ax,sweep_thresholds(k),sweep_counts(k)+.8,num2str(sweep_counts(k)), ...
+  'HorizontalAlignment','center','FontSize',9);
 end
 xline(ax,cfg.slope_threshold,'--','Color',orange);
 ylim(ax,[-1 toy.n_channels+3]); xlim(ax,[min(sweep_thresholds)-.15 max(sweep_thresholds)+.2]);
 xlabel(ax,'Slope threshold'); ylabel(ax,'Flagged channels'); title(ax,'2. Same EEG, different threshold');
-[~,strong]=max(scores); [~,weak]=min(scores); display_channels=[strong weak];
-for c=display_channels
- ax=nexttile(layout);
- y=reshape(truth(1,c,:),[],1); z=reshape(corrected(1,c,:),[],1);
- plot(ax,times*1000,y,'k','DisplayName','Known clean signal'); hold(ax,'on');
- plot(ax,times*1000,z,'Color',orange,'DisplayName','Polynomial');
- limits=ylim(ax); search_ms=1000*[cfg.onset_s cfg.peak_search_end_s];
- patch(ax,search_ms([1 2 2 1]),limits([1 1 2 2]),[.86 .91 .94], ...
-  'FaceAlpha',.4,'EdgeColor','none','DisplayName','Peak search');
- subtitle='whole-epoch linear';
- for k=1:numel(diagnostics.fits)
-  rec=diagnostics.fits{k};
-  if rec.epoch==1 && rec.channel==c && isfield(rec,'peak_s')
-   xline(ax,1000*rec.peak_s,':','Color',blue,'DisplayName','Detected split');
-   subtitle=sprintf('decay degree %d',rec.decay.degree); break;
-  end
+text(ax,.98,.95,{'Flagged channels > 0: Windowed','No flagged channels: Linear'}, ...
+ 'Units','normalized','HorizontalAlignment','right','VerticalAlignment','top','FontSize',9);
+display_epoch=1; % One epoch, not an average; Python index 0 is the same epoch.
+[~,display_channel]=max(scores);
+ax=nexttile(layout,[1 2]); c=display_channel; e=display_epoch;
+y=reshape(truth(e,c,:),[],1); z=reshape(corrected(e,c,:),[],1);
+plot(ax,times*1000,y,'k','DisplayName','Known clean signal'); hold(ax,'on');
+plot(ax,times*1000,z,'Color',orange,'DisplayName','Polynomial');
+limits=ylim(ax); search_ms=1000*[cfg.onset_s cfg.peak_search_end_s];
+patch(ax,search_ms([1 2 2 1]),limits([1 1 2 2]),[.86 .91 .94], ...
+ 'FaceAlpha',.4,'EdgeColor','none','DisplayName','Peak search');
+subtitle='whole-epoch linear';
+for k=1:numel(diagnostics.fits)
+ rec=diagnostics.fits{k};
+ if rec.epoch==e && rec.channel==c && isfield(rec,'peak_s')
+  xline(ax,1000*rec.peak_s,':','Color',blue,'DisplayName','Detected split');
+  subtitle=sprintf('decay degree %d',rec.decay.degree); break;
  end
- title(ax,sprintf('%s, epoch 1: %s',labels{c},subtitle));
- xlabel(ax,'Time from trigger (ms)'); ylabel(ax,'Amplitude (a.u.)');
- xlim(ax,[-20 200]);
 end
-% One shared legend in a separate tile, outside both waveform axes.
+title(ax,sprintf('%s, epoch %d: %s',labels{c},e,subtitle));
+xlabel(ax,'Time from trigger (ms)'); ylabel(ax,'Amplitude (a.u.)'); xlim(ax,[-20 200]);
 wave_legend=legend(ax,'Orientation','horizontal','NumColumns',2,'FontSize',9,'Box','off');
 wave_legend.Layout.Tile='south';
 title(layout,sprintf('Polynomial | %d channels x %d stimuli | %s',toy.n_channels,toy.n_epochs,operation));
 
-%% 4. Inspect the simulated EEG and timing jitter
-fig_input=figure('Color','w','Position',[100 100 1200 420]);
-input_layout=tiledlayout(fig_input,1,2,'TileSpacing','compact','Padding','compact');
-ax=nexttile(input_layout); imagesc(ax,1000*times,1:toy.n_channels,reshape(data(1,:,:),toy.n_channels,[]));
-axis(ax,'xy'); xlim(ax,[-20 200]); colorbar(ax);
-xlabel(ax,'Time from trigger (ms)'); ylabel(ax,'Channel'); title(ax,'Observed EEG: epoch 1 (a.u.)');
-ax=nexttile(input_layout); hold(ax,'on');
-for c=1:toy.n_channels
- plot(ax,1:toy.n_epochs,1000*metadata.artifact_onsets_s(:,c),'.','Color',grey,'HandleVisibility','off');
+%% 4. Butterfly view: before and after correction
+% Both panels show ALL channels from the SAME epoch, with the same colors.
+% Highlight the two strongest simulated artifacts, independently of screening.
+% This display-only use of synthetic metadata does not affect fitting.
+[~,ranking]=sort(mean(abs(metadata.artifact_gains),1),'descend');
+highlight_channels=ranking(1:2);
+other_channels=setdiff(1:toy.n_channels,highlight_channels);
+highlight_colors=[orange;blue];
+display_mask=times>=-.020 & times<=.200;
+fig_butterfly=figure('Color','w','Position',[100 100 1200 480]);
+butterfly_layout=tiledlayout(fig_butterfly,1,2,'TileSpacing','compact','Padding','compact');
+headings={'Before correction: observed EEG','After correction: Polynomial'};
+arrays={data,corrected};
+for panel=1:2
+ ax=nexttile(butterfly_layout); hold(ax,'on'); values=arrays{panel};
+ for j=1:numel(other_channels)
+  c=other_channels(j); trace=plot(ax,times*1000,reshape(values(display_epoch,c,:),[],1), ...
+   'Color',[.65 .69 .71],'LineWidth',.8);
+  if j==1, trace.DisplayName=sprintf('Other channels (%d)',numel(other_channels));
+  else, trace.HandleVisibility='off'; end
+ end
+ for j=1:numel(highlight_channels)
+  c=highlight_channels(j);
+  plot(ax,times*1000,reshape(values(display_epoch,c,:),[],1),'Color',highlight_colors(j,:), ...
+   'LineWidth',1.2,'DisplayName',labels{c});
+ end
+ xline(ax,0,':','Color',grey,'LineWidth',.8,'HandleVisibility','off');
+ visible=values(display_epoch,:,display_mask); lower=min(visible(:)); upper=max(visible(:));
+ pad=.08*max(upper-lower,1e-12);
+ title(ax,headings{panel}); xlabel(ax,'Time from trigger (ms)'); ylabel(ax,'Amplitude (a.u.)');
+ xlim(ax,[-20 200]); ylim(ax,[lower-pad upper+pad]); grid(ax,'on'); ax.GridAlpha=.15;
 end
-plot(ax,1:toy.n_epochs,1000*mean(metadata.artifact_onsets_s,2),'-o','Color',blue,'DisplayName','Mean across channels');
-yline(ax,3,':','Color',[.4 .4 .4],'DisplayName','Nominal onset: 3 ms');
-xlabel(ax,'Stimulus / epoch'); ylabel(ax,'Residual artifact onset (ms)');
-title(ax,'Stimulus jitter + channel latency');
-jitter_legend=legend(ax,'Orientation','horizontal','FontSize',9,'Box','off');
-jitter_legend.Layout.Tile='south';
+butterfly_legend=legend(ax,'Orientation','horizontal','NumColumns',3,'FontSize',9,'Box','off');
+butterfly_legend.Layout.Tile='south';
+title(butterfly_layout,{sprintf('Butterfly EEG | %d channels, epoch %d',toy.n_channels,display_epoch), ...
+ 'Amplitude axes scaled separately; original signal units'});
 
 %% 5. Continue the host pipeline
 % Replace data/times with real preprocessed epochs; keep matching good EEG

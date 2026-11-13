@@ -116,6 +116,14 @@ including fill_mode='gaussian'. It displays only **Polynomial** and evaluates fi
 on the same data, including the no-offset linear fallback. The detected peak
 can differ from the true artifact peak because it sees neural activity/noise.
 
+
+The final figure places butterflies of **all observed channels before correction**
+and **all corrected channels** side by side, for the same epoch. The two strongest
+simulated artifact channels keep the same colors; other channels are grey.
+Amplitudes remain in their original units, with separately labelled vertical
+scales. The threshold figure retains one clean-versus-corrected channel example.
+Legends are outside the signal axes.
+
 For experimental recordings, enable fill_mode='gaussian', choose suitable
 windows and use auto screening or an explicit manual channel classification.
 
