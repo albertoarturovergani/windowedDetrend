@@ -56,6 +56,29 @@ at their defaults for the initial test. **Gaussian filling stays enabled in
 both demos**, matching the library default `fill_mode='gaussian'`.
 Full settings and alternatives: [post-epoching guide](scripts/POST_EPOCHING_GUIDE.md).
 
+### Default detrending flow
+
+This decision flow applies to both Python and MATLAB with the current defaults
+(`channel_policy='auto'`, `only_offset_channels=false`, `fill_mode='gaussian'`).
+The first decision considers all selected channels; the second chooses the
+decay degree separately for each channel.
+
+```mermaid
+flowchart TD
+    A["Compute a slope score for each selected channel"] --> B{"Does any channel score reach or exceed Slope Threshold?"}
+    B -->|No| C["Subtract a whole-epoch linear trend from each selected channel"]
+    C -->|No rise zeroing or gap filling| Z["Corrected data"]
+    B -->|Yes| D["Windowed detrending on all selected channels"]
+    D --> E["Pre: quadratic fit<br/>Rise: Lagrange interpolation"]
+    E --> F{"Does this channel score reach or exceed Slope Threshold?"}
+    F -->|"Yes: classified with offset"| G["Decay: cubic polynomial, degree 3"]
+    F -->|"No: not classified with offset"| H["Decay: quadratic polynomial, degree 2"]
+    G --> I["Assemble and subtract the fitted trend"]
+    H --> I
+    I --> J["Fill the zeroed rise plus margin with Gaussian noise"]
+    J --> Z
+```
+
 ## Try the multichannel EEG demonstration
 
 The Python notebook and MATLAB Live Script generate the same **16-channel,
