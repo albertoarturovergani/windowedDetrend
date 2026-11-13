@@ -163,3 +163,9 @@ above are generated locally rather than downloaded with the repository:
 The earlier single-channel benchmark and its saved figures remain in `results`.
 Their 856 outputs and historical parity score describe that earlier run.
 The 64-channel run has its own outputs under `results/scalp64`.
+
+## Filling scope
+
+This historical comparison explicitly uses `fill_mode="none"` in all methods.
+It validates detrending before replacement. The current Gaussian default is
+validated separately in [FILLING.md](FILLING.md).

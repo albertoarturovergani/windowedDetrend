@@ -11,3 +11,6 @@
 %   run_scalp_benchmark - Shared 64-channel scalp benchmark, five methods.
 %   test_plugin        - Core and adapter checks.
 %   build_toolbox      - Build a local .mltbx installer.
+%   tmspath_fill_offset - Gaussian or Fourier-resampled offset replacement.
+%   test_filling        - Filling and local random-stream checks.
+%   run_fill_validation - Cross-language filling validation.

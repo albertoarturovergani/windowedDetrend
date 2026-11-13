@@ -1,7 +1,8 @@
 function [cleaned,trend,info] = tmspath_detrend(data,times,cfg)
 % Standalone post-epoching detrending, no toolbox required.
 % data: epochs x channels x samples. times: seconds. channels: 1-based.
-% Empty channels means all. No random replacement or filtering.
+% Empty channels means all. Gaussian filling follows the fit by default.
+% trend remains the fitted trend; info.fits{k}.fill records replacements.
 if nargin<3, cfg=tmspath_config(); end
 def=tmspath_config(); names=fieldnames(cfg);
 assert(all(ismember(names,fieldnames(def))),'Unknown configuration field');
@@ -12,6 +13,10 @@ assert(all(isfinite(data(:))) && all(isfinite(t)) && all(diff(t)>0),'Finite inpu
 finish=cfg.end_s; if isempty(finish), finish=t(end); end
 assert(t(1)<=cfg.onset_s && cfg.onset_s<finish && finish<=t(end)+1e-12,'Invalid correction interval');
 assert(ismember(cfg.mode,{'windowed','global'}),'Invalid mode');
+assert(ismember(cfg.fill_mode,{'none','gaussian','resample'}),'Invalid fill_mode');
+assert(isscalar(cfg.fill_margin_s) && isfinite(cfg.fill_margin_s) && cfg.fill_margin_s>=0,'Invalid fill_margin_s');
+assert(isscalar(cfg.fill_seed) && isfinite(cfg.fill_seed) && cfg.fill_seed==fix(cfg.fill_seed) && cfg.fill_seed>=0 && cfg.fill_seed<=2^32-1,'Invalid fill_seed');
+assert(strcmp(cfg.fill_mode,'none') || strcmp(cfg.mode,'windowed'),'Optional filling requires windowed mode');
 assert(cfg.tau_min_s>0 && cfg.tau_max_s>cfg.tau_min_s && cfg.grid_size>=3 && cfg.refinements>=0,'Invalid search parameters');
 assert(cfg.grid_size==fix(cfg.grid_size) && cfg.refinements==fix(cfg.refinements),'Grid counts must be integers');
 for d=[cfg.rise_degree cfg.decay_degree cfg.pre_degree], assert(d>=0 && d==fix(d),'Invalid degree'); end
@@ -42,11 +47,22 @@ for e=1:size(data,1)
    anchor=[]; if cfg.constrain_decay, anchor=interp1(t,y,peak); end
    [z(decay),rec.decay]=fit_segment(t(decay)-peak,y(decay),cfg.decay_model,cfg.decay_degree,cfg,anchor);
    rec.peak_s=peak;
+   if ~strcmp(cfg.fill_mode,'none')
+    rec.fill=tmspath_fill_offset(y,t,cfg.onset_s,peak,cfg.fill_margin_s,cfg.fill_mode,cfg.fill_seed,e,c);
+   end
   end
   trend(e,c,:)=reshape(z,1,1,[]); records{end+1}=rec; %#ok<AGROW>
  end
 end
-cleaned=data-trend; info=struct('config',cfg,'fits',{records});
+cleaned=data-trend;
+for k=1:numel(records)
+ rec=records{k};
+ if isfield(rec,'fill')
+  fill=rec.fill;
+  cleaned(rec.epoch,rec.channel,fill.target_first:fill.target_last)=reshape(fill.values,1,1,[]);
+ end
+end
+info=struct('config',cfg,'fits',{records});
 end
 
 function [fit,info]=fit_segment(x,y,model,degree,cfg,anchor)

@@ -106,7 +106,7 @@ def reference_fit(signal, method):
     return fit,detail
 
 def plugin_fit(signal, rise_model, degree):
-    cfg=Config(onset_s=ONSET_MS/1000,peak_s=PEAK_MS/1000,end_s=TIME_S[-1],
+    cfg=Config(fill_mode='none', onset_s=ONSET_MS/1000,peak_s=PEAK_MS/1000,end_s=TIME_S[-1],
                rise_model=rise_model,decay_model='singledecay' if rise_model=='singlerise' else 'poly',
                rise_degree=3,decay_degree=degree,constrain_rise=rise_model=='singlerise',
                constrain_decay=True,fit_offset=False,tau_min_s=TAU_BOUNDS_MS[0]/1000,
@@ -197,7 +197,7 @@ def refinement_control(arrays,cases):
     reference,info=exponential_fit(signal,True)
     records=[]
     for count in (3,5,7):
-        cfg=Config(onset_s=.010,peak_s=.015,rise_model='singlerise',decay_model='singledecay',
+        cfg=Config(fill_mode='none', onset_s=.010,peak_s=.015,rise_model='singlerise',decay_model='singledecay',
                    constrain_rise=True,constrain_decay=True,refinements=count)
         result,_,diagnostics=detrend(signal[None,None,:],TIME_S,cfg)
         records.append(dict(refinements=count,mse=mse(result[0,0],arrays['truth'],EVAL),

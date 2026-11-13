@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "executed_code_cells": 7,
+  "method": "Polynomial",
+  "polynomial_mse": 1.0137524360764771,
+  "fill_mode": "none",
+  "detected_peak_s": 0.0236,
+  "live_script_matches_executed_source": true,
+  "matlab_comparison": {
+    "passed": true,
+    "absolute_tolerance": 1e-10,
+    "max_abs_corrected_difference": 4.618527782440651e-14,
+    "max_abs_trend_difference": 4.618527782440651e-14,
+    "max_abs_times_difference": 0.0
+  }
+}

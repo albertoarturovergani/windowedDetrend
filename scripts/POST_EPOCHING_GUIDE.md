@@ -11,7 +11,7 @@ Pulse-artifact handling / interpolation
     → feature extraction
 ```
 
-The input is already preprocessed and epoched. The plugin estimates and subtracts the remaining slow trend independently for each selected channel and epoch. It does not remove the stimulation pulse, detect bad trials/channels, epoch the recording, run ICA, or extract features. Continue those steps in your existing pipeline using the corrected output. Fit subsequent ICA on the detrended data rather than reusing a decomposition fitted before this transformation.
+The input is already preprocessed and epoched. The plugin estimates and subtracts the remaining slow trend independently for each selected channel and epoch. It does not remove the stimulation pulse, detect bad trials/channels, epoch the recording, run ICA, or extract features. Gaussian filling after the fit is now enabled by default; the historical code listings below explicitly demonstrate detrending before filling. Continue those steps in your existing pipeline using the corrected output. Fit subsequent ICA on the detrended data rather than reusing a decomposition fitted before this transformation.
 
 Both implementations preserve amplitude units and array dimensions. Python/MNE data remain in their input units (normally volts); EEGLAB data remain in their input units (often microvolts). The toy below uses arbitrary units. **All core configuration times are in seconds relative to the TMS event**, including when an epoch starts before zero. The EEGLAB adapter converts `EEG.times` from milliseconds automatically.
 
@@ -75,14 +75,14 @@ Create the default configuration in Python:
 
 ```python
 from windowed_detrend import Config, detrend
-cfg = Config()
+cfg = Config(fill_mode='none', )
 corrected, trend, diagnostics = detrend(data, times, cfg)
 ```
 
 Create the equivalent configuration in MATLAB:
 
 ```matlab
-cfg = tmspath_config();
+cfg = tmspath_config(); cfg.fill_mode='none'; % Historical detrending-only example.
 [corrected, trend, diagnostics] = tmspath_detrend(data, times, cfg);
 ```
 
@@ -135,7 +135,7 @@ The decay anchor is the observed signal at the split, not an extrapolation of th
 
 | Operation | Python | MATLAB |
 |---|---|---|
-| Configuration | `Config()` in [core.py](PythonPlugin/src/windowed_detrend/core.py) | [tmspath_config.m](MatlabPlugin/tmspath_config.m) |
+| Configuration | `Config(fill_mode='none', )` in [core.py](PythonPlugin/src/windowed_detrend/core.py) | [tmspath_config.m](MatlabPlugin/tmspath_config.m) |
 | Array entry point and window selection | `detrend(data, times, cfg)` in [core.py](PythonPlugin/src/windowed_detrend/core.py) | [tmspath_detrend.m](MatlabPlugin/tmspath_detrend.m) |
 | Dataset adapter | `detrend_mne(epochs, cfg, picks=...)` | [tmspath_eeglab.m](MatlabPlugin/tmspath_eeglab.m) |
 | Segment fitting | Internal `fit_segment(...)` | Local `fit_segment(...)` inside `tmspath_detrend.m` |
@@ -318,7 +318,7 @@ epochs.load_data()
 picks = mne.pick_types(epochs.info, eeg=True, exclude='bads')
 assert len(picks) > 0, 'No usable EEG channels selected'
 
-cfg = Config(
+cfg = Config(fill_mode='none',
     onset_s=0.010,              # adapt to your pulse-handling interval
     peak_s=0.015,               # adapt to the observed residual-artifact peak
     end_s=float(epochs.times[-1]),
@@ -348,7 +348,7 @@ from windowed_detrend import Config, detrend
 
 # data: existing float array [n_epochs, n_channels, n_samples]
 # times: existing 1D sample-time vector, seconds relative to TMS
-cfg = Config(onset_s=0.010, peak_s=0.015, end_s=float(times[-1]),
+cfg = Config(fill_mode='none', onset_s=0.010, peak_s=0.015, end_s=float(times[-1]),
              rise_model='lagrange', decay_model='poly',
              rise_degree=3, decay_degree=3, constrain_rise=False,
              constrain_decay=True, pre_degree=None)
@@ -373,7 +373,7 @@ The variable `EEG` below is your **existing**, already-preprocessed and epoched 
 assert(isnumeric(EEG.data), 'Load the epoched EEG data into memory first');
 assert(isempty(EEG.icaweights), 'Insert detrending before fitting ICA');
 
-cfg = tmspath_config();
+cfg = tmspath_config(); cfg.fill_mode='none'; % Historical detrending-only example.
 cfg.onset_s = 0.010;            % adapt to your pulse-handling interval
 cfg.peak_s = 0.015;             % adapt to the residual-artifact peak
 cfg.end_s = double(EEG.times(end)) / 1000;
@@ -430,7 +430,7 @@ companion, `MatlabPlugin/demo_windowed_detrend_source.m`, is also provided.
 ```matlab
 % data: existing numeric array [n_epochs, n_channels, n_samples]
 % times: existing vector in SECONDS relative to TMS
-cfg = tmspath_config();
+cfg = tmspath_config(); cfg.fill_mode='none'; % Historical detrending-only example.
 cfg.onset_s = 0.010; cfg.peak_s = 0.015; cfg.end_s = times(end);
 cfg.rise_model = 'lagrange'; cfg.decay_model = 'poly';
 cfg.rise_degree = 3; cfg.decay_degree = 3;
@@ -471,7 +471,7 @@ decay = times >= 0.015
 artifact[decay] = -100 * (1 - np.exp(-0.005 / 0.003)) * np.exp(-(times[decay] - 0.015) / 0.200)
 data = (neural + artifact)[None, None, :]  # epochs x channels x samples
 
-cfg = Config(onset_s=0.010, peak_s=0.015, end_s=times[-1],
+cfg = Config(fill_mode='none', onset_s=0.010, peak_s=0.015, end_s=times[-1],
              rise_model='lagrange', decay_model='poly', rise_degree=3,
              decay_degree=3, constrain_rise=False, constrain_decay=True,
              pre_degree=None)
@@ -522,7 +522,7 @@ decay = times >= 0.015;
 artifact(decay) = -100 * (1-exp(-0.005/0.003)) * exp(-(times(decay)-0.015)/0.200);
 data = reshape(neural + artifact, 1, 1, []);  % epochs x channels x samples
 
-cfg = tmspath_config();
+cfg = tmspath_config(); cfg.fill_mode='none'; % Historical detrending-only example.
 cfg.onset_s = 0.010; cfg.peak_s = 0.015; cfg.end_s = times(end);
 cfg.rise_model = 'lagrange'; cfg.decay_model = 'poly';
 cfg.rise_degree = 3; cfg.decay_degree = 3;
@@ -565,3 +565,19 @@ For separate exponential rise/decay fits, use `rise_model='singlerise'`, `decay_
 ## Returned outputs and fitted parameters
 
 See [Outputs and fitted parameters](OUTPUTS.md) for the complete diagnostic fields, exponential taus and amplitudes, normalized polynomial coefficients, Lagrange nodes, Python/MATLAB inspection examples and result export. Fit residual MSE is distinct from recovery MSE against a known clean signal.
+
+## Gaussian filling after detrending
+
+The default workflow uses Lagrange rise, cubic decay, automatic peak detection
+and Gaussian filling. Set `fill_mode` to `gaussian` (default), `resample`, or
+`none`; `fill_margin_s=0.005` expands the rise interval on each side and
+`fill_seed=42` makes noise reproducible within each implementation. Choose
+`onset_s`, `peak_search_end_s` and `end_s` from your data and inspect the split.
+
+`corrected` includes filling; `trend` remains the fitted model. Thus
+`data-trend` is the signal before filling, and `corrected+trend` need not equal
+the input inside the replaced region. Replacement can extend beyond the fit
+window by the configured margin. Gaussian draws differ across languages;
+their distribution parameters and masks agree.
+
+See [filling, defaults, diagnostics and validation](FILLING.md).

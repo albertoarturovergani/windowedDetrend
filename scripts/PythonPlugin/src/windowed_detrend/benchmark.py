@@ -25,7 +25,7 @@ def synthetic(times, tau_rise_s, tau_decay_s, family='windowed',
 
 
 def configs(peak=.015):
-    base=Config(onset_s=.010,peak_s=peak,peak_search_end_s=.100,
+    base=Config(fill_mode='none', onset_s=.010,peak_s=peak,peak_search_end_s=.100,
                 rise_model='singlerise',decay_model='singledecay',constrain_rise=True)
     return dict(window_exp=base,
                 window_poly3=replace(base,rise_model='poly',decay_model='poly',constrain_rise=False,decay_degree=3),

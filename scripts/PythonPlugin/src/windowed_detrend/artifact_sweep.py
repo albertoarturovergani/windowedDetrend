@@ -22,7 +22,7 @@ def run(output,size=10):
     t=np.arange(2500)/10000; mask=t>.010
     grid=[(r,d,'grid') for r in np.linspace(.001,.050,size) for d in np.linspace(.025,.250,size)]+[(.003,.200,'extreme')]
     records=[];artifacts=[];bounded=[];params=[];curves={};diagnostics=[]
-    cfg=Config(mode='global',onset_s=.010)
+    cfg=Config(fill_mode='none', mode='global',onset_s=.010)
     for family in ('windowed','biexp'):
         for r,d,group in grid:
             _,artifact=synthetic(t,r,d,family)

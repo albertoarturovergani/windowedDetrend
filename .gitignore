@@ -183,3 +183,7 @@ cython_debug/
 /scripts/results/scalp64/fixtures/
 /scripts/results/scalp64/metadata.mat
 /scripts/results/scalp64/matlab/case_*_results.mat
+
+# Optional filling: retain reports and figures; regenerate shared waveform fixtures.
+/scripts/results/filling_validation/*.mat
+/scripts/results/filling_validation/*.npz

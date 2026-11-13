@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "cases": 18,
+  "processed_traces": 72,
+  "fourier_cases": 144,
+  "max_pipeline_difference": 4.440892098500626e-16,
+  "max_scipy_fourier_difference": 6.661338147750939e-16,
+  "pipeline_reference_sha256": "5fc8721b3fa7b76f8558e81369511024d1e4c60a7b54eeb4fc0a69d327c5632f",
+  "notes": "Unmodified pipeline Gaussian and resample branches are the Python references. MATLAB uses its native RNG; Gaussian masks, fitted trend and distribution parameters are compared, not equality of independent noise draws."
+}

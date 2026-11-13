@@ -19,14 +19,16 @@ toy.artifact_gain = -100;      % Signed scale; positive values reverse polarity.
 toy.neural_amplitude = 5;      % Oscillator amplitude scale, arbitrary units.
 toy.neural_frequency_hz = 50;  % Oscillator frequency in Hz.
 toy.neural_damping_per_s = 25; % Envelope exp(-rate * time).
+toy.background_amplitude = 0.5; % Continuous synthetic background.
+toy.background_frequency_hz = 11; % Background frequency in Hz.
 
 %% B. Detrending parameters
-% All 19 fields are explicit. No configuration is overwritten in later sections.
+% All 22 fields are explicit. No configuration is overwritten in later sections.
 cfg = tmspath_config();
 cfg.mode = 'windowed';        % Separate rise/decay; 'global' is external comparison only.
 cfg.onset_s = 0.010;          % Correction start after pulse handling.
-cfg.peak_s = 0.015;           % Known toy split; [] enables automatic detection.
-cfg.peak_search_end_s = 0.100; % Automatic search end, limited by correction end.
+cfg.peak_s = [];              % Detect the peak within the user-chosen search window.
+cfg.peak_search_end_s = 0.030; % Automatic search end, limited by correction end.
 cfg.end_s = [];              % [] uses last sample; otherwise supply seconds.
 cfg.rise_model = 'lagrange';  % Alternatives: 'poly', 'singlerise'.
 cfg.decay_model = 'poly';     % Alternatives: 'singledecay', 'doubledecay'.
@@ -42,15 +44,13 @@ cfg.grid_size = 21;         % Initial candidates per tau, integer >= 3.
 cfg.refinements = 5;        % Default 5; integer >= 0. More levels improve tau resolution.
 cfg.channels = [];          % [] selects all; 1 selects the toy channel (one-based).
 cfg.global_model = 'biexp';  % Inactive in windowed mode; external comparator only.
-
-% Optional comparison inherits cfg and applies only these overrides.
-run_exponential_comparison = true; % false skips the additional fit.
-exponential_overrides = struct('rise_model','singlerise', ...
-    'decay_model','singledecay','constrain_rise',true,'constrain_decay',true);
+cfg.fill_mode = 'none';      % Demo: off. Use 'gaussian' for experimental recordings.
+cfg.fill_seed = 42;         % Reproducible local RNG; change to obtain another realization.
+cfg.fill_margin_s = 0.005;   % Expand sampled rise by 5 ms on each side; 0 fills only rise.
 
 % Evaluation and display settings do not control fitting.
 evaluation_start_s = toy.onset_s;
-evaluation_end_s = [];      % [] uses last sample; same MSE interval for both fits.
+evaluation_end_s = [];      % [] uses last sample; MSE interval for the polynomial fit.
 plot_limits_ms = [-20 250]; % Display only.
 
 %% Parameter options and interpretation
@@ -85,6 +85,7 @@ assert(toy.tau_rise_s > 0 && toy.tau_decay_s > 0);
 times = (round(toy.epoch_start_s*toy.fs_hz):round(toy.epoch_end_s*toy.fs_hz)-1)' / toy.fs_hz;
 u = max(times-toy.onset_s,0);
 neural = toy.neural_amplitude * exp(-toy.neural_damping_per_s*u) .* sin(2*pi*toy.neural_frequency_hz*u);
+neural = neural + toy.background_amplitude * sin(2*pi*toy.background_frequency_hz*times);
 artifact = toy.artifact_gain * (1-exp(-u/toy.tau_rise_s));
 decay = times >= toy.peak_s;
 artifact(decay) = toy.artifact_gain * (1-exp(-(toy.peak_s-toy.onset_s)/toy.tau_rise_s)) * exp(-(times(decay)-toy.peak_s)/toy.tau_decay_s);
@@ -93,9 +94,15 @@ fprintf('Array shape (epochs, channels, samples): %d x %d x %d\n',size(data));
 
 %% 2. Apply the configuration from section B
 [corrected, trend, diagnostics] = tmspath_detrend(data,times,cfg);
+detected_peak_s = diagnostics.fits{1}.peak_s;
+fprintf('Detected/supplied split: %.3f ms; toy artifact split: %.3f ms\n',1000*detected_peak_s,1000*toy.peak_s);
 assert(isequal(size(corrected),size(data)));
 if isempty(cfg.pre_degree)
     outside = times < cfg.onset_s;
+    if isfield(diagnostics.fits{1},'fill')
+        fill = diagnostics.fits{1}.fill;
+        outside(fill.target_first:fill.target_last) = false;
+    end
     assert(isequal(corrected(:,:,outside),data(:,:,outside)));
 end
 disp('Output dimensions and applicable preservation checks passed');
@@ -121,51 +128,20 @@ hold on;
 plot(times*1000, reshape(trend,[],1), '--', 'DisplayName','Estimated trend');
 ax2 = nexttile(layout);
 plot(times*1000, neural, 'k', 'DisplayName','Known neural signal'); hold on;
-plot(times*1000, recovered, 'DisplayName','Corrected signal');
+plot(times*1000, recovered, 'DisplayName','Polynomial');
 ax3 = nexttile(layout);
 plot(times*1000, recovered-neural, 'r', 'DisplayName','Recovery error');
 for ax = [ax1 ax2 ax3]
     xline(ax,toy.onset_s*1000,':','HandleVisibility','off');
     xline(ax,toy.peak_s*1000,':','HandleVisibility','off');
+    xline(ax,detected_peak_s*1000,'--','Fitted split','HandleVisibility','off');
     ylabel(ax,'Amplitude (a.u.)');
     legend(ax,'Location','best'); xlim(ax,plot_limits_ms);
 end
 xlabel(ax3,'Time relative to TMS pulse (ms)');
-title(layout,sprintf('Windowed detrending: %s rise / %s decay',cfg.rise_model,cfg.decay_model));
+title(layout,'Polynomial: Lagrange rise / cubic decay');
 
-%% 5. Optional comparison using the settings from section B
-if run_exponential_comparison
-    cfg_exp = cfg;
-    names = fieldnames(exponential_overrides);
-    for k = 1:numel(names)
-        cfg_exp.(names{k}) = exponential_overrides.(names{k});
-    end
-    [corrected_exp,trend_exp,diagnostics_exp] = tmspath_detrend(data,times,cfg_exp);
-    recovered_exp = reshape(corrected_exp,[],1);
-    mse_exp = mean((recovered_exp(mask)-neural(mask)).^2);
-    comparison = table([mse_full;mse_exp], 'VariableNames',{'RecoveryMSE'}, ...
-        'RowNames',{'Selected configuration','Separate exponentials'});
-    disp(comparison);
-    figure('Color','w');
-    plot(times*1000,neural,'k','DisplayName','Known neural signal'); hold on;
-    plot(times*1000,recovered,'DisplayName','Selected configuration');
-    plot(times*1000,recovered_exp,'DisplayName','Separate exponentials');
-    xlim(plot_limits_ms); xlabel('Time relative to TMS pulse (ms)');
-    ylabel('Amplitude (a.u.)'); legend('Location','best');
-    title('Toy recovery comparison');
-else
-    disp('Optional comparison disabled');
-end
-
-%% 6. Continue your existing pipeline
-% This standalone adaptation is comparable to the paper's method, not an
-% exact numerical replica: exponential fits use a log-tau grid with refinement
-% instead of SciPy curve_fit; Lagrange uses exact input-node values instead of
-% high-degree monomial fitting. Historical figures include cubic/quintic fits.
-% Automatic optimized order selection is not implemented. Cross-language
-% agreement tests the new plugins, not equivalence to the original scripts.
-% See ../PAPER_ALIGNMENT.md for the documented differences.
-%
+%% 5. Continue your existing pipeline
 % Replace toy data with preprocessed epochs x channels x samples and times
 % in seconds. Edit section B and inspect output before fitting subsequent ICA.
 % For an existing EEGLAB dataset: tmspath_eeglab(EEG,cfg).

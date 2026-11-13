@@ -80,13 +80,12 @@ dimensions, seed handling, evaluation windows and reproduction commands.
   activity; early components can therefore be distorted or removed.
 - Masks are disjoint: pre t<onset, rise onset<=t<peak, decay t>=peak.
   Supporting Fig.3 instead assigns the peak sample to rise; this one-sample
-  convention follows the figure notebook. No sample is corrected twice.
+  convention follows the figure notebook. No sample belongs to both fitting masks; subsequent filling is a separate replacement step.
 - Automatic peak: maximum absolute observed amplitude within the search window.
   Main grid uses known simulation peaks (oracle segmentation) to isolate fit
   behavior. Extreme-case automatic-peak tests are separately labeled, so the
   grid cannot be interpreted as an end-to-end peak-detection validation.
-- No pulse removal, gap filling, random replacement, filtering, ICA, lag
-  correction, post-detrend resampling or data-driven channel screening.
+- Gaussian gap filling is now enabled by default, with optional Fourier-resampled filling or no fill. Historical benchmark configurations explicitly disable filling. No pulse removal, filtering, ICA, lag correction, whole-epoch resampling or data-driven channel screening is performed.
   These pipeline steps can change recovery and should be evaluated separately.
 - Failures raise explicit errors rather than silently substituting a model.
 
@@ -163,3 +162,5 @@ PAPER_PLUGIN_COMPARISON.md have been recomputed. Older benchmark numbers in
 this alignment document describe their recorded historical configurations,
 not the new default. The direct comparison retains 3, 5 and 7 refinements as
 explicit controls.
+
+See [FILLING.md](FILLING.md) for current filling defaults and validation.

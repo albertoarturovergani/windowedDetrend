@@ -1,6 +1,6 @@
 function test_plugin()
 t=(0:2499)'/10000; [gt,a]=tmspath_synthetic(t,.003,.2);
-cfg=tmspath_config();cfg.onset_s=.010;cfg.peak_s=.015;
+cfg=tmspath_config();cfg.fill_mode='none';cfg.onset_s=.010;cfg.peak_s=.015;
 assert(strcmp(cfg.rise_model,'lagrange') && strcmp(cfg.decay_model,'poly') && cfg.decay_degree==3);
 [defaultZ,defaultTrend,defaultInfo]=tmspath_detrend(reshape(gt+a,1,1,[]),t,cfg);
 rise=t>=.010 & t<.015; decay=t>=.015;

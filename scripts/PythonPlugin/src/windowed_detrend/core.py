@@ -1,10 +1,12 @@
 """Standalone TMSpath detrending adaptation. AGPL-3.0; see README.
 Input: epochs x channels x samples; times in seconds; amplitudes unchanged.
-No epoching, filtering, interpolation, ICA or random replacement is performed.
+Gaussian filling (default) is separate from the fitted detrending trend.
+No epoching, ICA or whole-epoch resampling is performed.
 """
 from dataclasses import dataclass, asdict
 from itertools import product
 import numpy as np
+from .filling import fill_offset
 
 @dataclass
 class Config:
@@ -27,6 +29,9 @@ class Config:
     grid_size: int = 21
     refinements: int = 5
     channels: tuple | None = None
+    fill_mode: str = 'gaussian'
+    fill_margin_s: float = 0.005
+    fill_seed: int = 42
 
 
 def _basis(x, model, theta, degree, scale):
@@ -110,7 +115,9 @@ def fit_segment(x, y, model, degree, cfg, anchor=None):
 def detrend(data, times, config=None):
     """Return corrected array, estimated trend, and per-trace diagnostics.
     Raises on invalid/nonfinite input or undersampled windows; never silently
-    substitutes a different model. Unselected channels/samples remain intact.
+    substitutes a different model. Unselected channels remain intact. Optional
+    fill replaces the rise plus margin after fitting; trend stays the fitted
+    trend and diagnostics retain replacement values and sample boundaries.
     """
     cfg = config or Config()
     y=np.asarray(data, dtype=float); t=np.asarray(times, dtype=float)
@@ -121,6 +128,13 @@ def detrend(data, times, config=None):
     end=t[-1] if cfg.end_s is None else cfg.end_s
     if not t[0] <= cfg.onset_s < end <= t[-1]+1e-12: raise ValueError('Invalid correction interval')
     if cfg.mode not in ('windowed','global'): raise ValueError('Invalid mode')
+    if cfg.fill_mode not in ('none', 'gaussian', 'resample'): raise ValueError('Invalid fill_mode')
+    if not np.isfinite(cfg.fill_margin_s) or cfg.fill_margin_s < 0:
+        raise ValueError('fill_margin_s must be finite and nonnegative')
+    if not isinstance(cfg.fill_seed, (int, np.integer)) or not 0 <= cfg.fill_seed <= 2**32-1:
+        raise ValueError('fill_seed must be an integer from 0 to 2**32-1')
+    if cfg.fill_mode != 'none' and cfg.mode != 'windowed':
+        raise ValueError('Optional filling requires windowed mode')
     if not 0<cfg.tau_min_s<cfg.tau_max_s or cfg.grid_size<3 or cfg.refinements<0:
         raise ValueError('Invalid tau search configuration')
     if cfg.grid_size != int(cfg.grid_size) or cfg.refinements != int(cfg.refinements): raise ValueError('Grid counts must be integers')
@@ -151,8 +165,16 @@ def detrend(data, times, config=None):
                 anchor=float(np.interp(peak,t,sig)) if cfg.constrain_decay else None
                 trend[e,c,decay],rec['decay']=fit_segment(t[decay]-peak,sig[decay],cfg.decay_model,cfg.decay_degree,cfg,anchor)
                 rec['peak_s']=float(peak)
+                if cfg.fill_mode != 'none':
+                    rec['fill'] = fill_offset(sig, t, cfg.onset_s, peak, cfg.fill_margin_s,
+                                              cfg.fill_mode, cfg.fill_seed, e, c)
             records.append(rec)
-    return y-trend,trend,dict(config=asdict(cfg),fits=records)
+    cleaned = y-trend
+    for rec in records:
+        if 'fill' in rec:
+            fill = rec['fill']
+            cleaned[rec['epoch'], rec['channel'], fill['target_first']:fill['target_last']+1] = fill['values']
+    return cleaned,trend,dict(config=asdict(cfg),fits=records)
 
 
 def detrend_mne(epochs, config=None, picks=None):

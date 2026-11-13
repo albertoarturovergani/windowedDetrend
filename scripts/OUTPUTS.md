@@ -12,11 +12,11 @@ corrected, trend, diagnostics = detrend(data, times, cfg)
 
 | Output | Meaning |
 |---|---|
-| `corrected` | Input minus the estimated trend. This is the array to inspect and pass to subsequent preprocessing. |
+| `corrected` | Final output after subtracting the trend and applying the configured fill (Gaussian by default). Inspect before subsequent processing. |
 | `trend` | Estimated artifact/trend at every input sample, in the same amplitude units as the input. |
 | `diagnostics` | Configuration actually used and the fitted parameters for each processed epoch/channel. |
 
-Core arrays have shape epochs x channels x samples. Unselected channels have zero trend and unchanged corrected data. With the default `pre_degree`, samples outside the correction interval also remain unchanged. Outputs are returned in memory; the core does not automatically save files.
+Core arrays have shape epochs x channels x samples. Unselected channels have zero trend and unchanged corrected data. With the default `pre_degree`, samples outside the union of the correction and replacement intervals remain unchanged. The fill margin can extend beyond the fitting interval. Outputs are returned in memory; the core does not automatically save files.
 
 `detrend_mne` returns a corrected copy of the MNE Epochs object, an array of trends in core layout, and diagnostics. `tmspath_eeglab` returns a corrected EEG structure, a trend array in channels x samples x trials layout, and diagnostics. Diagnostic indices still refer to epochs and channels.
 
@@ -100,7 +100,7 @@ assert(max(abs(reconstructed(:) - reference)) < 1e-8);
 
 The default rise is an interpolant through all observed rise samples. Additional fields are `degree` (N-1), `node_times_s` (relative to the segment origin), and `node_values` (observed amplitudes). `coefficients` and `tau_s` are empty because no monomial coefficient vector or tau is estimated.
 
-At the input nodes the trend equals the observed signal exactly. Consequently `residual_mse=0` and the corrected rise is zero, including any neural component and noise. This is an interpolation property, not evidence of successful neural recovery.
+At the input nodes the trend equals the observed signal exactly. Consequently `residual_mse=0` and the rise before filling is zero, including any neural component and noise. This is an interpolation property, not evidence of successful neural recovery.
 
 ## Inspect the outputs in Python and MATLAB
 
@@ -163,7 +163,7 @@ end
 
 ## Fit residual versus recovery MSE
 
-The optimization minimizes the segment residual against the **observed input**. Since `corrected = input - trend`, `residual_mse` is the mean squared corrected amplitude within that segment, not the error against the unknown neural signal.
+The optimization minimizes the segment residual against the **observed input**. Before filling, `input - trend` is the fit residual. `residual_mse` is its mean squared amplitude within that segment, not the error against the unknown neural signal.
 
 Recovery MSE requires a known clean reference, available in the toy simulation but normally unavailable in real recordings. It is calculated separately by the demonstrations over their declared evaluation interval. Neither recovery MSE nor error relative to the true artifact taus is a core output. Inspect the fitted curve, corrected waveform, split location, and bounds alongside the numerical diagnostics; a smaller residual alone can reflect removal of neural activity.
 
@@ -180,3 +180,19 @@ with open("detrending_diagnostics.pkl", "wb") as handle:
 ```matlab
 save('detrending_results.mat','corrected','trend','diagnostics','times','cfg');
 ```
+
+## Gaussian filling after detrending
+
+The default workflow uses Lagrange rise, cubic decay, automatic peak detection
+and Gaussian filling. Set `fill_mode` to `gaussian` (default), `resample`, or
+`none`; `fill_margin_s=0.005` expands the rise interval on each side and
+`fill_seed=42` makes noise reproducible within each implementation. Choose
+`onset_s`, `peak_search_end_s` and `end_s` from your data and inspect the split.
+
+`corrected` includes filling; `trend` remains the fitted model. Thus
+`data-trend` is the signal before filling, and `corrected+trend` need not equal
+the input inside the replaced region. Replacement can extend beyond the fit
+window by the configured margin. Gaussian draws differ across languages;
+their distribution parameters and masks agree.
+
+See [filling, defaults, diagnostics and validation](FILLING.md).

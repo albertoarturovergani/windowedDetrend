@@ -29,7 +29,7 @@ For an already epoched EEGLAB structure (channels x samples x trials, ms):
 ```
 
 Only EEG.data is changed in the copy; the adapter does not require EEGLAB to run.
-No filtering, epoching, ICA, interpolation or random replacement is performed.
+No filtering, epoching or ICA is performed. For experimental recordings, see the filling note below.
 
 ## Interactive Live Script
 
@@ -43,9 +43,9 @@ installation. Edit sections A (toy generation) and B (detrending) at the
 beginning; comments explain all parameters and alternative options. It needs no
 additional toolbox. The sections generate the toy signal,
 call `tmspath_detrend`, check the output, calculate recovery MSE and plot the
-results. An optional section compares separate exponential rise/decay fits.
-The default is Lagrange rise interpolation and cubic decay; the known toy
-split is supplied explicitly. Lagrange subtraction zeroes the rise window,
+results. The recovered curve is labelled **Polynomial**.
+The demo uses Lagrange rise interpolation, cubic decay and no filling. It detects
+the peak in a user-configurable search window. Lagrange subtraction zeroes the rise window,
 including any neural activity there.
 
 ```matlab
@@ -53,9 +53,9 @@ open("C:\path\to\windowedDetrend\scripts\MatlabPlugin\demo_windowed_detrend.mlx"
 ```
 
 The editable plain-text companion is `demo_windowed_detrend_source.m`.
-The source was executed with MATLAB R2023b. The Live Script opens without
-saved cell outputs; select Run All to generate inline figures. Precomputed
-figures and numerical output are also available in `demo_results`.
+The source was executed with MATLAB R2023b. Select Run All in the Live Script
+to generate the inline figures. Current demo figures and reports are in
+`../results/filling_validation`.
 
 ## Native benchmark and cross-language validation
 
@@ -114,4 +114,11 @@ The historical SciPy notebook comparator remains Python-only.
 
 ## Current defaults
 
-Windowed polynomial detrending: `rise_model=lagrange`, `decay_model=poly`, `decay_degree=3`, `constrain_rise=false`, and decay anchored to the observed peak. Peak detection remains automatic unless a split is supplied. Lagrange degree is N-1 for N rise samples; `rise_degree` is ignored for this model. At the input nodes, the interpolant equals the input, so the corrected rise window is zero, including any neural signal. Evaluation uses that exact identity rather than a high-degree monomial solve. The historical four-method benchmark explicitly retains its exponential and polynomial 3/3 and 3/5 configurations; it is not a benchmark of the new default. The updated toy demonstrates the new default models.
+Windowed polynomial detrending: `rise_model=lagrange`, `decay_model=poly`, `decay_degree=3`, `constrain_rise=false`, and decay anchored to the observed peak. Peak detection remains automatic unless a split is supplied. Lagrange degree is N-1 for N rise samples; `rise_degree` is ignored for this model. At the input nodes, the interpolant equals the input, so the rise window is zero before the subsequent filling step, including removal of any neural signal. Evaluation uses that exact identity rather than a high-degree monomial solve. The historical four-method benchmark explicitly retains its exponential and polynomial 3/3 and 3/5 configurations; it is not a benchmark of the new default. The updated toy demonstrates the new default models.
+
+## Experimental recordings
+
+The Python and MATLAB demos disable filling (`fill_mode='none'`) to show the
+detrending result. For experimental recordings, enable random filling of the
+zeroed interval with `fill_mode='gaussian'` (the library default), and choose
+the peak-search and correction windows for your data. See [filling options](../FILLING.md).

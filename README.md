@@ -10,7 +10,7 @@ The algorithm separates the artifact into rise and decay windows, fits each wind
 
 [Figure PDF](scripts/images/paper_concept_computed.pdf) | [Numerical source](scripts/reconstruct_paper_concept.py) | [Method and interpretation](scripts/POST_EPOCHING_GUIDE.md)
 
-The figure is a computed conceptual example, not a universal ranking of fitting methods. Lagrange interpolation reproduces every observed rise sample, so subtraction leaves zero in that window, including any neural activity. See the guide for model assumptions and comparator limitations.
+The figure is a computed conceptual example, not a universal ranking of fitting methods. Lagrange interpolation reproduces every observed rise sample, so subtraction leaves zero in that window before the subsequent filling step, including removal of any neural activity. See the guide for model assumptions and comparator limitations.
 
 ## Place in the preprocessing pipeline
 
@@ -166,3 +166,10 @@ See the [citation metadata](scripts/MatlabPlugin/CITATION.cff) and [AGPL-3.0 lic
 If you use windowed detrending in your research, please cite:
 
 Vergani, A. A., Peroni, G., Bruscagli, C., Lionti, A., Brandizzi, F., Lenge, M., Salvestrini, G., Jiménez-Jiménez, D., Casarotto, S., Rosanova, M., Mazzoni, A., Guerrini, R., Grippo, A., & Balestrini, S. (2026). **Effective correction of extreme capacitive artifacts in TMS-EEG via windowed detrending.** *Journal of Neural Engineering*, 23(3), 036009. [https://doi.org/10.1088/1741-2552/ae668e](https://doi.org/10.1088/1741-2552/ae668e).
+
+## Experimental recordings
+
+The Python and MATLAB demos disable filling (`fill_mode='none'`) to show the
+detrending result. For experimental recordings, enable random filling of the
+zeroed interval with `fill_mode='gaussian'` (the library default), and choose
+the peak-search and correction windows for your data. See [filling options](scripts/FILLING.md).

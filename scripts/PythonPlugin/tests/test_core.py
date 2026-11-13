@@ -8,10 +8,10 @@ class PluginTests(unittest.TestCase):
     def setUp(self):
         self.t=np.arange(2500)/10000
         self.gt,self.a=synthetic(self.t,.003,.2)
-        self.cfg=Config(onset_s=.010,peak_s=.015,rise_model='singlerise',
+        self.cfg=Config(fill_mode='none', onset_s=.010,peak_s=.015,rise_model='singlerise',
                         decay_model='singledecay',constrain_rise=True)
     def test_default_lagrange_cubic(self):
-        cfg=Config(peak_s=.015)
+        cfg=Config(fill_mode='none', peak_s=.015)
         self.assertEqual((cfg.rise_model,cfg.decay_model,cfg.decay_degree),('lagrange','poly',3))
         signal=(self.gt+self.a)[None,None,:]
         z,trend,info=detrend(signal,self.t,cfg)

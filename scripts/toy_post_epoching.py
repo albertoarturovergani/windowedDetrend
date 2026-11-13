@@ -21,7 +21,7 @@ decay = times >= 0.015
 artifact[decay] = -100 * (1 - np.exp(-0.005 / 0.003)) * np.exp(-(times[decay] - 0.015) / 0.200)
 data = (neural + artifact)[None, None, :]  # epochs x channels x samples
 
-cfg = Config(onset_s=0.010, peak_s=0.015, end_s=times[-1],
+cfg = Config(fill_mode='none', onset_s=0.010, peak_s=0.015, end_s=times[-1],
              rise_model='lagrange', decay_model='poly', rise_degree=3,
              decay_degree=3, constrain_rise=False, constrain_decay=True,
              pre_degree=None)

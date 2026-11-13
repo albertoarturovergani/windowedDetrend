@@ -6,7 +6,7 @@ if nargin<1, fixturePath=fullfile(fileparts(root),'results','artifact_only_fixtu
 if nargin<2, outputDir=fullfile(fileparts(root),'results','matlab'); end
 if ~exist(outputDir,'dir'), mkdir(outputDir); end
 S=load(fixturePath);t=S.times(:);mask=t>.010;
-cfg=tmspath_config();cfg.mode='global';cfg.onset_s=.010;
+cfg=tmspath_config();cfg.fill_mode='none';cfg.mode='global';cfg.onset_s=.010;
 rows=zeros(size(S.data,1),5);maxError=0;
 for i=1:size(S.data,1)
  [~,trend]=tmspath_detrend(S.data(i,:,:),t,cfg); fit=trend(:);

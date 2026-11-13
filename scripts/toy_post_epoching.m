@@ -9,7 +9,7 @@ decay = times >= 0.015;
 artifact(decay) = -100 * (1-exp(-0.005/0.003)) * exp(-(times(decay)-0.015)/0.200);
 data = reshape(neural + artifact, 1, 1, []);  % epochs x channels x samples
 
-cfg = tmspath_config();
+cfg = tmspath_config(); cfg.fill_mode='none';
 cfg.onset_s = 0.010; cfg.peak_s = 0.015; cfg.end_s = times(end);
 cfg.rise_model = 'lagrange'; cfg.decay_model = 'poly';
 cfg.rise_degree = 3; cfg.decay_degree = 3;

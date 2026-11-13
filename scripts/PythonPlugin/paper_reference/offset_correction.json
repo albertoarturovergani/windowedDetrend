@@ -1,0 +1,9 @@
+{
+  "source": "TMSpathPipeline/scripts/tmspath_utils.py",
+  "source_sha256": "40bdf3f90e08b892916116e8a94a5ce1d1321fe8197c024d9cf850b62aebcd1c",
+  "functions": {
+    "generate_noise_from_distribution": 10230,
+    "apply_offset_correction": 11579
+  },
+  "scope": "Unmodified definitions; Gaussian and resample modes exercised. Filling source uses original pre-onset samples."
+}
